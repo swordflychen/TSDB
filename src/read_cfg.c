@@ -8,10 +8,8 @@
 void read_cfg(struct cfg_info *p_cfg, char *cfg_file)
 {
     const char *str_val = NULL;
-    struct json_object *obj = NULL, *tmp_obj = NULL;
+    struct json_object *obj = NULL;
     struct json_object *cfg = json_object_from_file(cfg_file);
-    int array_len = 0;
-    int i;
     if (cfg == NULL) {
         goto fail;
     }

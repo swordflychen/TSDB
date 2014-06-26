@@ -22,12 +22,6 @@ static char *x_strstr(const char *s1, const char *s2, int size)
     return (0);
 }
 
-//void ldb_destroy(struct _leveldb_stuff *ldbs){
-//static void *ctl_ldb_(char *db_name)
-//void ctl_cmd_list(const char *data)
-
-
-/*------------------------------api-------------------------------------------*/
 int ctl_ldb_init(char *db_name)
 {
     g_ldb = ldb_initialize(db_name);
@@ -45,19 +39,13 @@ int ctl_ldb_close(void)
     return 0;
 }
 
-/*
- *	------------------------data-----------------------
- *	*3\r\n$3\r\nSET\r\n$5\r\nmykey\r\n$7\r\nmyvalue\r\n
- *	---------------------------------------------------
- */
-
-/************W***************/
+/* write */
 #define LDB_SET			12291
 #define LDB_SET_CNT		3
 #define LDB_DEL			2143
 #define LDB_DEL_CNT		2
 #define LDB_MSET		223203
-/************R***************/
+/* read */
 #define LDB_GET			4179
 #define LDB_GET_CNT		2
 #define LDB_LRANGE		5325872 // no used
@@ -67,16 +55,13 @@ int ctl_ldb_close(void)
 #define LDB_KEYS_CNT	2
 #define LDB_INFO		149540
 #define LDB_INFO_CNT	1
-//#define LDB_TSGET	9003091 //redis客户端没有问题，但是redis.lua不支持这个命令
-/************O***************/
+/* quit client */
 #define LDB_QUIT	294963
 
-/************P***************/
 #define CHECK_BUFFER(x, y) do { \
     if (  (( offset = (p_node->svbf + p_node->gtlen - (x + y)) ) <=  0)  ||  !(x = x_strstr( (x + y), "\r\n", offset)) ) { return X_DATA_NO_ALL; } \
     else { x = x + 2; } \
 } while (0)
-//if ( (x + y) < p_node->svbf )
 
 #define PARSE_LEN(x) do { if (x == 0){ \
     if (data[ p_node->doptr ] != '$'){ \
@@ -97,9 +82,9 @@ int ctl_ldb_close(void)
 int ctl_cmd_parse(struct data_node *p_node)
 {
     int ret = 0;
-    int loop = 0;
+    unsigned int loop = 0;
     int ok = 0;
-    int i,j = 0;
+    unsigned int i,j = 0;
     int offset = 0;
     size_t mlen = 0;
     char *p_new = NULL;
@@ -212,7 +197,6 @@ int ctl_cmd_parse(struct data_node *p_node)
                 x_printf("start key = %s\n", &data[ p_node->key ]);
                 x_printf("end key = %s\n", &data[ p_node->val ]);
                 result = ldb_tsget(g_ldb, &data[ p_node->key ], p_node->klen, &data[ p_node->val ], p_node->vlen, &size);
-                // x_printf("val = %s\n", result);
                 goto R_MULTI_OUT_PUT;
 
             case LDB_XLRANGE:
@@ -230,7 +214,6 @@ int ctl_cmd_parse(struct data_node *p_node)
                 x_printf("end = %s\n", &data[ p_node->val2 ]);
                 result = ldb_xrangeget(g_ldb, &data[ p_node->key ], p_node->klen, &data[ p_node->val ],
                         p_node->vlen,  &data[ p_node->val2 ], p_node->vlen2, &size);
-                // x_printf("val = %s\n", result);
                 goto R_MULTI_OUT_PUT;
 
 
@@ -277,7 +260,6 @@ R_BULK_OUT_PUT:
         if (result){
             char tmp[32] = {0};
             sprintf(tmp, "$%d\r\n", size);
-            //sprintf(tmp, "$%zu\r\n", size);
             ret = add_send_node(p_node, tmp, strlen(tmp));
             ret = add_send_node(p_node, result, size);
             leveldb_free(result);

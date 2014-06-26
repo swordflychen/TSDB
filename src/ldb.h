@@ -8,7 +8,6 @@
 #include "leveldb/c.h"
 
 #define SOME_KV_NODES_COUNT 1024
-//#define LRANGE_MAX 2000
 
 struct kv_node {
     int klen;
@@ -32,7 +31,6 @@ struct kv_list {
     struct some_kv head;
 };
 
-//#define DEFAULT_DBNAME_SIZE 200
 #define DEFAULT_DBNAME_SIZE 1024
 
 struct _leveldb_stuff {
@@ -76,7 +74,7 @@ char *ldb_xrangeget(struct _leveldb_stuff *ldbs, const char *key, size_t suf_kle
 
 /*
  * Get keys.
- * Now just support prefix match.
+ * Now just support prefix matching.
  */
 char *ldb_keys(struct _leveldb_stuff *ldbs, const char *ptn, size_t ptn_len, int *size);
 

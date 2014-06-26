@@ -32,7 +32,6 @@ struct _leveldb_stuff *ldb_initialize(char *path)
     memset(ldbs, 0, sizeof(struct _leveldb_stuff));
 
     ldbs->options = leveldb_options_create();
-    // snprintf(ldbs->dbname, sizeof(ldbs->dbname), "%s%s%s-%d", LDB_WORK_PATH, "/", path, ((int) geteuid()));
     snprintf(ldbs->dbname, sizeof(ldbs->dbname), "%s%s%s", LDB_WORK_PATH, "/", path);
 
     cache = leveldb_cache_create_lru(LDB_CACHE_LRU_SIZE);
@@ -47,12 +46,12 @@ struct _leveldb_stuff *ldb_initialize(char *path)
 #else
     leveldb_options_set_compression(ldbs->options, leveldb_no_compression);
 #endif
-    /* R */
+    /* Read options */
     ldbs->roptions = leveldb_readoptions_create();
     leveldb_readoptions_set_verify_checksums(ldbs->roptions, 1);
     leveldb_readoptions_set_fill_cache(ldbs->roptions, 1);/* set 1 is faster */
 
-    /* W */
+    /* W  options */
     ldbs->woptions = leveldb_writeoptions_create();
 #ifdef SYNC_PUT
     leveldb_writeoptions_set_sync(ldbs->woptions, 1);
@@ -60,7 +59,7 @@ struct _leveldb_stuff *ldb_initialize(char *path)
     leveldb_writeoptions_set_sync(ldbs->woptions, 0);
 #endif
 
-    /* B */
+    /* Batch write */
     ldbs->wbatch = leveldb_writebatch_create();
 
     leveldb_options_set_create_if_missing(ldbs->options, 1);
@@ -78,9 +77,6 @@ struct _leveldb_stuff *ldb_initialize(char *path)
 
 }
 
-/*
- * Close the ldb.
- */
 void ldb_close(struct _leveldb_stuff *ldbs)
 {
     leveldb_close(ldbs->db);
@@ -91,9 +87,6 @@ void ldb_close(struct _leveldb_stuff *ldbs)
     leveldb_writebatch_destroy(ldbs->wbatch);
 }
 
-/*
- * Destroy the ldb.
- */
 void ldb_destroy(struct _leveldb_stuff *ldbs)
 {
     char* err = NULL;
@@ -136,12 +129,7 @@ static int get_number_len(int len)
     }
     return i;
 }
-/*
- static int get_bulk_len(int len)
- {
- return ( get_number_len(len) + len + 5 );// "$\r\n\r\n"
- }
- */
+
 static char *set_bulk(char *dst, const char *put, int len)
 {
     char *ptr = NULL;
@@ -301,9 +289,6 @@ char *ldb_tsget(struct _leveldb_stuff *ldbs, const char *st_key, size_t st_klen,
     return NULL ;
 }
 
-/*
- * for lrange key ts1 ts2
- */
 char *ldb_xrangeget(struct _leveldb_stuff *ldbs, const char *pre_key, size_t pre_klen, const char *st_time, size_t st_tlen, const char *ed_time, size_t ed_tlen, int *size)
 {
     char *err = NULL;
@@ -338,7 +323,6 @@ char *ldb_xrangeget(struct _leveldb_stuff *ldbs, const char *pre_key, size_t pre
     leveldb_iter_seek(iter, st_key, st_klen);
     p_key = (char *) st_key;
     p_old = p_new = &list.head;
-    /* while ( leveldb_iter_valid(iter) && (0 >= strncmp( ed_key, p_key, ed_klen )) ); */
     if (0 <= strncmp(ed_key, p_key, ed_klen)) {
         while (leveldb_iter_valid(iter)) {
             /* parse kv */
@@ -346,14 +330,12 @@ char *ldb_xrangeget(struct _leveldb_stuff *ldbs, const char *pre_key, size_t pre
             x_printf("%p iter key = %s, klen = %ld\n", p_key, p_key, klen);
 
             p_val = (char *) leveldb_iter_value(iter, &vlen);
-            // x_printf("%p iter key = %s, klen = %ld\n", p_val, p_val, vlen);
 
             leveldb_iter_get_error(iter, &err);
             if (err) {
                 goto FAIL_ITER_PARSE;
             }
 
-            // if (0 > strncmp( ed_key, p_key, ed_klen ) || list.count >= LRANGE_MAX){
             if (0 > strncmp(ed_key, p_key, ed_klen)) {
                 x_printf("--------------break------------------\n");
                 break;
@@ -394,7 +376,6 @@ char *ldb_xrangeget(struct _leveldb_stuff *ldbs, const char *pre_key, size_t pre
             /*
              * fix bug: index is error if list.count = n * SOME_KV_NODES_COUNT(1024),
              *          SOME_KV_NODES_COUNT = 1024, n > 0.
-             * TODO: this method is ugly.
              */
             if (index == 0) {
                 index = SOME_KV_NODES_COUNT;
@@ -602,16 +583,15 @@ char *ldb_keys(struct _leveldb_stuff *ldbs, const char *ptn, size_t ptn_len, int
 char *ldb_info(struct _leveldb_stuff *ldbs, int *size)
 {
     int cnt = 0;
-    int i;
     *size = 0;
 
     /* #server */
-    char* svr = "\n# Server:";
+    char svr[16] = "\n# Server:";
     ++cnt;
     *size += strlen(svr) + get_number_len(strlen(svr));
 
     /* tsdb version */
-    char *vers = TSDB_VERSION;
+    char vers[32] = TSDB_VERSION;
     ++cnt;
     *size += strlen(vers) + get_number_len(strlen(vers));
 
@@ -656,12 +636,12 @@ char *ldb_info(struct _leveldb_stuff *ldbs, int *size)
     *size += strlen(uptid) + get_number_len(strlen(uptid));
 
     /* # Keyspace. */
-    char* keyspace = "\n# Keyspace:\n";
+    char keyspace[16] = "\n# Keyspace:\n";
     ++cnt;
     *size += strlen(keyspace) + get_number_len(strlen(keyspace));
 
     /* #LeveldbStatus: */
-    char* ldbstat = "\n# Leveldbstatus:";
+    char ldbstat[32] = "\n# Leveldbstatus:";
     ++cnt;
     *size += strlen(ldbstat) + get_number_len(strlen(ldbstat));
 

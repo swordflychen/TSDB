@@ -2,7 +2,7 @@
  * a simple server use libev
  */
 
-#define _GNU_SOURCE             /* See feature_test_macros(7) */
+// #define _GNU_SOURCE             /* See feature_test_macros(7) */
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -56,8 +56,9 @@ time_t LDB_START_TIME;
 
 static void first_init(int argc ,char** argv)
 {
+	char dftcfg[16] = "config.json";
     if (argc < 2) {
-        read_cfg(&g_cfg_pool, "config.json");
+        read_cfg(&g_cfg_pool, dftcfg);
     } else {
         read_cfg(&g_cfg_pool, argv[1]);
     }
@@ -219,14 +220,16 @@ static void cq_push(CQ_LIST *list, CQ_ITEM *item) {
     list->tail = item;
     //pthread_mutex_unlock(&list->lock);
 }
-/********************************************************/
+
+/* callback functions. */
 static void accept_callback	(struct ev_loop *loop, ev_io *w, int revents);
 static void recv_callback	(struct ev_loop *loop, ev_io *w, int revents);
 static void send_callback	(struct ev_loop *loop, ev_io *w, int revents);
-static void timeout_callback	(struct ev_loop *loop, ev_timer *w, int revents);
 static void async_callback	(struct ev_loop *loop, ev_async *w, int revents);
 static void check_callback	(struct ev_loop *loop, ev_check *w, int revents);
-
+#ifdef OPEN_TIME_OUT
+static void timeout_callback	(struct ev_loop *loop, ev_timer *w, int revents);
+#endif
 
 static void async_callback(struct ev_loop *loop, ev_async *w, int revents)
 {
@@ -317,6 +320,7 @@ static void check_callback(struct ev_loop *loop, ev_check *w, int revents)
 }
 
 
+#ifdef OPEN_TIME_OUT
 static void timeout_callback(struct ev_loop *loop, ev_timer *w, int revents)
 {
     struct data_node *p_node = (struct data_node *)w->data;
@@ -339,6 +343,7 @@ static void timeout_callback(struct ev_loop *loop, ev_timer *w, int revents)
     /* clear timer from loop */
     //ev_unloop (EV_A_ EVUNLOOP_ONE); 
 }
+#endif
 
 static void accept_callback(struct ev_loop *loop, ev_io *w, int revents)
 {
@@ -412,13 +417,11 @@ ACCEPT_LOOP:
     ev_timer_init(p_timer, timeout_callback, 5.5, 0. );
     ev_timer_start(loop, p_timer);
 #endif
-    //x_printf("socket fd :%d\n", p_watcher->fd);
 }
 
 static void recv_callback(struct ev_loop *loop, ev_io *w, int revents)
 {
     int ret = 0;
-    //ev_io *w_evt = NULL;
     char temp[MAX_DEF_LEN] = {0};
 
     x_out_time(&g_dbg_time);
@@ -495,7 +498,6 @@ R_BROKEN:
     return;
 }
 
-
 static void send_callback(struct ev_loop *loop, ev_io *w, int revents)
 {
     x_out_time(&g_dbg_time);
@@ -553,8 +555,7 @@ S_BROKEN:
     return;
 }
 
-
-/*==================================================================================================*/
+/* socket initial. */
 static int socket_init( int port )
 {
     struct sockaddr_in my_addr;
@@ -785,7 +786,8 @@ int main(int argc, char** argv)
     pools_init();
 
     /* initial the level db and start it. */
-    if(0 != ctl_ldb_init("data")) {
+	char datadir[8] = "data";
+    if(0 != ctl_ldb_init(datadir)) {
         x_perror("Failed to initial the leveldb.");
         exit(EXIT_FAILURE);
     }

@@ -10,18 +10,19 @@ tsdb: time series database.
 * 上层传输采用 redis 协议，所以支持 redis 的所有客户端程序，只是有的命令不支持
 
 ### 1. 功能说明：
-* get key: 返回 key 所关联的字符串值
-* set key value ： 将字符串值 value 关联到 key ；
-* mset key1 val1 [key2 val2...] ：将字符串值 val1 关联到 key1，val2关联到key2...；
-* lrange prefix_key ts1 ts2 ：返回key1=prefix_key+ts1 到 key2=prefix_key+ts2 范围内所有的KV对；
-* keys str ：返回数据库中所有以str开始的key（即前缀匹配）； 
-* info ：返回关于 TSDB 服务器的各种信息和统计数值；
+* `get key`: 返回 key 所关联的字符串值
+* `set key value`： 将字符串值 value 关联到 key ；
+* `del key`： 删除key.
+* `mset key1 val1 [key2 val2...]`：将字符串值 val1 关联到 key1，val2关联到key2...；
+* `lrange prefix_key ts1 ts2`：返回key1=prefix_key+ts1 到 key2=prefix_key+ts2 范围内所有的KV对；
+* `keys str`：返回数据库中所有以str开始的key（即前缀匹配）； 
+* `info`：返回关于 TSDB 服务器的各种信息和统计数值；
 
 ### 2. 安装说明：
 * 编译 tsdb 依赖的 library：
-    make libs
+    `make libs`
 * 编译tsdb：
-    make all
+    `make all`
 * 安装完毕.
 
 ### 3. 简单启动说明：
@@ -103,15 +104,14 @@ tsdb: time series database.
 
 ### 8. Links:
 * 以下是依赖的library的下载地址：
-```
-    https://github.com/json-c/json-c
-    http://code.google.com/p/leveldb/
-    http://code.google.com/p/snappy/downloads/detail?name=snappy-1.1.1.tar.gz
-    http://software.schmorp.de/pkg/libev.html
-```
+* [json-c](https://github.com/json-c/json-c)
+* [levelDB](http://code.google.com/p/leveldb/)
+* [snappy](http://code.google.com/p/snappy/downloads/detail?name=snappy-1.1.1.tar.gz)
+* [libev](http://software.schmorp.de/pkg/libev.html)
 
 ### 9. License：
 * 请见LICENSE文件。
 
 ### 10. TODO 
+* TODO
 

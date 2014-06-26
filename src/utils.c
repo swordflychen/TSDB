@@ -51,9 +51,7 @@ int get_current_time(void)
     return (tv.tv_sec + 8*60*60) % (ONE_DAY_TIMESTAMP);
 }
 
-/*********************************LOGS***********************************************/
 extern struct cfg_info g_cfg_pool;
-//struct cfg_info g_cfg_pool;
 static int g_new_log_file = 0;
 static int g_old_log_file = 0;
 

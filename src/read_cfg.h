@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 struct cfg_info {
     char *ip;				// IP address.
     short w_port;			// write port.
@@ -14,11 +12,14 @@ struct cfg_info {
     char *log_file;			// log file name format.
     short log_verbosity;	// log level.
 
-    short ldb_readonly_switch;	// read only switch <=> mode
+    short ldb_readonly_switch;	// read only switch
     size_t ldb_write_buffer_size;
     size_t ldb_block_size;
     size_t ldb_cache_lru_size;
     short ldb_bloom_key_size;
 };
 
+/*
+ * Read config file in memory.
+ */
 extern void read_cfg(struct cfg_info *p_cfg, char *cfg_file);
