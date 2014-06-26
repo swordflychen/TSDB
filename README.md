@@ -5,11 +5,11 @@ TSDB: Time Series Database.
 -------------------------
 
 ### 0. Features
+* Written in Linux C.
 * TSDB is a key-value, time series database.
 * Storage engine uses levelDB.
 * Supports snappy compression.
 * Redis clients are supported, some commands just are supported, see details below.
-* Written in Linux C.
 
 ### 1. Commands support
 * `get key`: Get the value of a key.
@@ -78,8 +78,8 @@ TSDB: Time Series Database.
 * Description the directories.
 ```
     .
-    |-- doc                     --> documents
-    |-- lib                     --> dependented libraries
+    |-- docs                    --> documents
+    |-- deps                    --> dependented libraries
     |-- obj                     --> object binary files
     |-- src                     --> source code
     `-- var                     --> default workspace
@@ -100,9 +100,9 @@ TSDB: Time Series Database.
 ### 7. LevelDB 
 * Modified the levelDB source code( you can research the string chenjianfei@daoke.me in levelDB directory).
 ```
-    lib/leveldb-1.15.0/build_detect_platform
-    lib/leveldb-1.15.0/db/dbformat.h
-    lib/leveldb-1.15.0/db/version_set.cc
+    deps/leveldb-1.15.0/build_detect_platform
+    deps/leveldb-1.15.0/db/dbformat.h
+    deps/leveldb-1.15.0/db/version_set.cc
 ```
 
 ### 8. Links

@@ -5,6 +5,7 @@ tsdb: time series database.
 -------------------------
 
 ### 0. 描述：
+* 基于Linux-C编写
 * tsdb 是一个基于时间序列的KV数据库
 * 底层存储采用 leveldb，支持 snappy 压缩
 * 上层传输采用 redis 协议，所以支持 redis 的所有客户端程序，只是有的命令不支持
@@ -76,8 +77,8 @@ tsdb: time series database.
 * 各目录描述，详细信息请参见具体代码：
 ```
     .
-    |-- doc                     --> 相关文档
-    |-- lib                     --> tsdb依赖的library
+    |-- docs                    --> 相关文档
+    |-- deps                    --> tsdb依赖的library
     |-- obj                     --> tsdb代码生成的二进制文件保存目录
     |-- src                     --> tsdb代码所在的目录
     `-- var                     --> tsdb 默认的工作目录
@@ -97,9 +98,9 @@ tsdb: time series database.
 ### 7. leveldb修改说明：
 * 只修改下面两个文件的一些参数，具体修改内容可以在下面文件中搜索`chenjianfei@daoke.me`：
 ```
-    lib/leveldb-1.15.0/build_detect_platform
-    lib/leveldb-1.15.0/db/dbformat.h
-    lib/leveldb-1.15.0/db/version_set.cc
+    deps/leveldb-1.15.0/build_detect_platform
+    deps/leveldb-1.15.0/db/dbformat.h
+    deps/leveldb-1.15.0/db/version_set.cc
 ```
 
 ### 8. Links:

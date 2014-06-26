@@ -220,7 +220,6 @@ char *ldb_tsget(struct _leveldb_stuff *ldbs, const char *st_key, size_t st_klen,
             /*
              * fix bug: index is error if list.count = n * SOME_KV_NODES_COUNT(1024),
              *          SOME_KV_NODES_COUNT = 1024, n > 0.
-             * TODO: this method is ugly.
              */
             if (index == 0) {
                 index = SOME_KV_NODES_COUNT;
