@@ -1,8 +1,8 @@
 {
-        "w_port": 7501,
-        "r_port": 7502,
+        "w_port": 6661,
+        "r_port": 6662,
 
-        "max_connect": 1000,
+        "max_connect": 100,
         "num_threads": 8,
 
         "work_path": "./var",
