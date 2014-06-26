@@ -1,2 +1,2 @@
-see README.zh
+see README.zh.md
 ==========
