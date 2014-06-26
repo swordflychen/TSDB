@@ -586,7 +586,7 @@ char *ldb_info(struct _leveldb_stuff *ldbs, int *size)
     *size = 0;
 
     /* #server */
-    char svr[16] = "\n# Server:";
+    char svr[16] = "# Server:";
     ++cnt;
     *size += strlen(svr) + get_number_len(strlen(svr));
 
@@ -636,7 +636,7 @@ char *ldb_info(struct _leveldb_stuff *ldbs, int *size)
     *size += strlen(uptid) + get_number_len(strlen(uptid));
 
     /* # Keyspace. */
-    char keyspace[16] = "\n# Keyspace:\n";
+    char keyspace[32] = "\n# Keyspace:\nTODO";
     ++cnt;
     *size += strlen(keyspace) + get_number_len(strlen(keyspace));
 
