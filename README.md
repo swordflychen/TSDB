@@ -19,6 +19,8 @@ TSDB: Time Series Database.
 * `lrange prefix_key ts1 ts2`: Get a range of key-values.
 * `keys string`: Find all keys prefix matching the given pattern.
 * `info`: Get information and statistics about the server.
+* `ping`: Test client connection.
+* `exists key`: Determine whether key exists.
 
 ### 2. Make TSDB
 * Make the dependented libraries:

@@ -5,6 +5,9 @@
 #define MAX_CMD_LEN		512*1024*1024
 
 #define OPT_OK              "+OK\r\n"
+#define OPT_PONG            "+PONG\r\n"
+#define OPT_ONE             "+1\r\n"
+#define OPT_ZERO            "+0\r\n"
 #define OPT_LDB_ERROR       "-LDB ERROR\r\n"
 #define OPT_CMD_ERROR       "-CMD ERROR\r\n"
 #define OPT_NULL            "$-1\r\n"

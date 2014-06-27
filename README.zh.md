@@ -18,6 +18,8 @@ tsdb: time series database.
 * `lrange prefix_key ts1 ts2`：返回key1=prefix_key+ts1 到 key2=prefix_key+ts2 范围内所有的KV对；
 * `keys str`：返回数据库中所有以str开始的key（即前缀匹配）； 
 * `info`：返回关于 TSDB 服务器的各种信息和统计数值；
+* `ping`: 判断客户端是否连接到数据库；
+* `exists key`: 判断key是否存在数据库中；
 
 ### 2. 安装说明：
 * 编译 tsdb 依赖的 library：

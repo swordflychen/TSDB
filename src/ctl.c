@@ -48,15 +48,18 @@ int ctl_ldb_close(void)
 /* read */
 #define LDB_GET			4179
 #define LDB_GET_CNT		2
-#define LDB_LRANGE		5325872 // no used
-#define LDB_XLRANGE		138472676
-#define LDB_XLRANGE_CNT	4
+#define LDB_LRANGE		138472676
+#define LDB_LRANGE_CNT	4
 #define LDB_KEYS		179106
 #define LDB_KEYS_CNT	2
 #define LDB_INFO		149540
 #define LDB_INFO_CNT	1
+#define LDB_PING        269392
+#define LDB_PING_CNT    1
+#define LDB_EXISTS      58189240
+#define LDB_EXISTS_CNT  2
 /* quit client */
-#define LDB_QUIT	294963
+#define LDB_QUIT        294963
 
 #define CHECK_BUFFER(x, y) do { \
     if (  (( offset = (p_node->svbf + p_node->gtlen - (x + y)) ) <=  0)  ||  !(x = x_strstr( (x + y), "\r\n", offset)) ) { return X_DATA_NO_ALL; } \
@@ -190,17 +193,7 @@ int ctl_cmd_parse(struct data_node *p_node)
                 goto R_BULK_OUT_PUT;
 
             case LDB_LRANGE:
-                PARSE_LEN(p_node->klen);
-                PARSE_MEMBER(p_node->key, p_node->klen);/* look as start key */
-                PARSE_LEN(p_node->vlen);
-                PARSE_MEMBER(p_node->val, p_node->vlen);/* look as end key */
-                x_printf("start key = %s\n", &data[ p_node->key ]);
-                x_printf("end key = %s\n", &data[ p_node->val ]);
-                result = ldb_tsget(g_ldb, &data[ p_node->key ], p_node->klen, &data[ p_node->val ], p_node->vlen, &size);
-                goto R_MULTI_OUT_PUT;
-
-            case LDB_XLRANGE:
-                if(p_node->kvs != LDB_XLRANGE_CNT) {
+                if(p_node->kvs != LDB_LRANGE_CNT) {
                     goto E_OUT_PUT;
                 }
                 PARSE_LEN(p_node->klen);
@@ -212,7 +205,7 @@ int ctl_cmd_parse(struct data_node *p_node)
                 x_printf("prefix key = %s\n", &data[ p_node->key ]);
                 x_printf("start = %s\n", &data[ p_node->val ]);
                 x_printf("end = %s\n", &data[ p_node->val2 ]);
-                result = ldb_xrangeget(g_ldb, &data[ p_node->key ], p_node->klen, &data[ p_node->val ],
+                result = ldb_lrangeget(g_ldb, &data[ p_node->key ], p_node->klen, &data[ p_node->val ],
                         p_node->vlen,  &data[ p_node->val2 ], p_node->vlen2, &size);
                 goto R_MULTI_OUT_PUT;
 
@@ -234,6 +227,26 @@ int ctl_cmd_parse(struct data_node *p_node)
                 result = ldb_info(g_ldb, &size);
                 x_printf("size = %d\n", size);
                 goto R_MULTI_OUT_PUT;
+
+			case LDB_PING:
+				if(p_node->kvs != LDB_PING_CNT) {
+					goto E_OUT_PUT;
+				}
+				add_send_node(p_node, OPT_PONG, strlen(OPT_PONG));
+				return X_DATA_IS_ALL;
+
+			case LDB_EXISTS:
+				if (p_node->kvs != LDB_EXISTS_CNT) {
+					goto E_OUT_PUT;
+				}
+				PARSE_LEN(p_node->klen);
+				PARSE_MEMBER(p_node->key, p_node->klen);
+				ok = ldb_exists(g_ldb, &data[ p_node->key ], p_node->klen);
+				if (ok == -1) {
+					goto E_OUT_PUT;
+				}
+				add_send_node(p_node, (ok == 0 ? OPT_ZERO : OPT_ONE), strlen(OPT_ZERO));
+				return X_DATA_IS_ALL;
 
             case LDB_QUIT:
                 x_printf("-----------------------------------------------------\n");

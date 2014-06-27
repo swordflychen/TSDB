@@ -63,14 +63,9 @@ void ldb_destroy(struct _leveldb_stuff *ldbs);
 char *ldb_get(struct _leveldb_stuff *ldbs, const char *key, size_t klen, int *vlen);
 
 /*
- * Not used.
- */
-char *ldb_tsget(struct _leveldb_stuff *ldbs, const char *st_key, size_t st_klen, const char *ed_key, size_t ed_klen, int *size);
-
-/*
  * Get a key range info.
  */
-char *ldb_xrangeget(struct _leveldb_stuff *ldbs, const char *key, size_t suf_klen, const char *st_time, size_t st_tlen, const char *ed_time, size_t ed_tlen, int *size);
+char *ldb_lrangeget(struct _leveldb_stuff *ldbs, const char *key, size_t suf_klen, const char *st_time, size_t st_tlen, const char *ed_time, size_t ed_tlen, int *size);
 
 /*
  * Get keys.
@@ -103,4 +98,9 @@ int ldb_batch_put(struct _leveldb_stuff *ldbs, const char *key, size_t klen, con
  * With ldb_batch_put to use.
  */
 int ldb_batch_commit(struct _leveldb_stuff *ldbs);
+
+/*
+ * Returns if key exists.
+ */
+int ldb_exists(struct _leveldb_stuff *ldbs, const char *key, size_t klen);
 
