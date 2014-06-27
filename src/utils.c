@@ -111,7 +111,7 @@ void check_pid_file(void)
     if(access(pidfile, F_OK) == 0){
         fprintf(stderr, "Fatal error!\nPidfile %s already exists!\n"
                 "You must kill the process and then "
-                "remove this file before starting ssdb-server.\n", pidfile);
+                "remove this file before starting tsdb-server.\n", pidfile);
         exit(1);
     }
 }
