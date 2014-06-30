@@ -3,6 +3,7 @@ TODO
 
 ## logger opt
 ## bench test
+## regression test
 ## jemalloc / tcmalloc 
 ## distributed
 ## client api

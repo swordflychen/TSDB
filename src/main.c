@@ -18,6 +18,7 @@
 #include "ctl.h"
 #include "main.h"
 #include "read_cfg.h"
+#include "logger.h"
 
 
 int G_PAGE_SIZE = 0;
@@ -240,7 +241,7 @@ static void async_callback(struct ev_loop *loop, ev_async *w, int revents)
     if (item != NULL) {
         /*
            int leave = ev_loop_depth(loop);
-           x_printf("fd : %d  ev_loop_depth : %d\n", item->sfd, leave);
+           log_debug("fd : %d  ev_loop_depth : %d\n", item->sfd, leave);
            */
 #ifdef OPEN_STATIC
         /* it,s a bug when use static watcher at thread */
@@ -265,7 +266,7 @@ static void async_callback(struct ev_loop *loop, ev_async *w, int revents)
 
         ev_io_init( p_watcher, recv_callback, item->sfd, EV_READ);
         ev_io_start( loop, p_watcher );
-        x_printf("thread[%lu] accept: fd :%d  addr:%s port:%d\n", p_work->thread_id, item->sfd, item->szAddr, item->port);
+        log_debug("thread[%lu] accept: fd :%d  addr:%s port:%d\n", p_work->thread_id, item->sfd, item->szAddr, item->port);
         item_init(item);
     }
     pthread_mutex_unlock(&(((WORK_THREAD *)(w->data))->new_conn_queue).lock);
@@ -283,10 +284,10 @@ static void check_callback(struct ev_loop *loop, ev_check *w, int revents)
         item = cq_pop( &(p_work->new_conn_queue) );
 
         if (item != NULL) {
-            x_printf("in check_callback!\n");
+        	log_debug("in check_callback!\n");
             /*
                int leave = ev_loop_depth(loop);
-               x_printf("fd : %d  ev_loop_depth : %d\n", item->sfd, leave);
+               log_debug("fd : %d  ev_loop_depth : %d\n", item->sfd, leave);
                */
 #ifdef OPEN_STATIC
             /* it,s a bug when use static watcher at thread */
@@ -312,7 +313,7 @@ static void check_callback(struct ev_loop *loop, ev_check *w, int revents)
             ev_io_init( p_watcher, recv_callback, item->sfd, EV_READ);
             ev_io_start( loop, p_watcher );
 
-            x_printf("thread[%lu] accept: fd :%d  addr:%s port:%d\n", p_work->thread_id, item->sfd, item->szAddr, item->port);
+            log_debug("thread[%lu] accept: fd :%d  addr:%s port:%d\n", p_work->thread_id, item->sfd, item->szAddr, item->port);
             item_init(item);
         }
     }while(item != NULL);
@@ -326,7 +327,7 @@ static void timeout_callback(struct ev_loop *loop, ev_timer *w, int revents)
     struct data_node *p_node = (struct data_node *)w->data;
     ev_io *p_io_w = &(p_node->io_watcher);
 
-    x_printf("timeout\n");	
+    log_debug("timeout\n");
     clean_recv_node( p_node );
     clean_send_node( p_node );
     close( p_io_w->fd );
@@ -357,7 +358,7 @@ static void accept_callback(struct ev_loop *loop, ev_io *w, int revents)
             continue; 
         }
         else {
-            x_printf("accept error.[%s]\n", strerror(errno));
+        	log_debug("accept error.[%s]\n", strerror(errno));
             return;
         }
     }
@@ -411,7 +412,7 @@ ACCEPT_LOOP:
     }
 
 #ifdef OPEN_TIME_OUT
-    x_printf("start timer!\n");
+    log_debug("start timer!\n");
     ev_timer *p_timer = &(g_cache_pool[newfd].timer_watcher);;
     p_timer->data = &g_cache_pool[newfd];
     ev_timer_init(p_timer, timeout_callback, 5.5, 0. );
@@ -427,7 +428,7 @@ static void recv_callback(struct ev_loop *loop, ev_io *w, int revents)
     x_out_time(&g_dbg_time);
     struct data_node *p_node = &g_cache_pool[w->fd];
     ret = recv(w->fd, temp, MAX_DEF_LEN, 0);/* to use recv (MAX_DEF_LEN - 1) can't make it safe */
-    x_printf("   recv size : %d\n", ret);
+    log_debug("   recv size : %d\n", ret);
 
     if(ret > 0){
         /* save recive data */
@@ -458,7 +459,7 @@ static void recv_callback(struct ev_loop *loop, ev_io *w, int revents)
         //w_evt = malloc(sizeof(ev_io));
     }
     else if(ret ==0){/* socket has closed when read after */
-        x_printf("remote socket closed!socket fd: %d\n",w->fd);
+    	log_debug("remote socket closed!socket fd: %d\n",w->fd);
         goto R_BROKEN;
     }
     else{
@@ -466,7 +467,7 @@ static void recv_callback(struct ev_loop *loop, ev_io *w, int revents)
             return;
         }
         else{/* socket is going to close when reading */
-            x_printf("ret :%d ,close socket fd : %d\n",ret,w->fd);
+        	log_debug("ret :%d ,close socket fd : %d\n",ret,w->fd);
             goto R_BROKEN;
         }
     }
@@ -506,17 +507,17 @@ static void send_callback(struct ev_loop *loop, ev_io *w, int revents)
         int ret = send(w->fd, p_node->sdbf + p_node->ptlen,
                 p_node->mxlen - p_node->ptlen,
                 0);
-        x_printf("-------> send = %d\n",  ret);
+        log_debug("-------> send = %d\n",  ret);
         if (ret < 0){
             goto S_BROKEN;
         }
         p_node->ptlen += ret;
         if (p_node->ptlen != p_node->mxlen){
-            x_printf("no all\n");
+        	log_debug("no all\n");
             return;
         }
         else{
-            x_printf("is all\n");
+        	log_debug("is all\n");
             clean_send_node(p_node);
             if (p_node->status < X_DONE_OK){
                 goto S_BROKEN;
@@ -561,11 +562,11 @@ static int socket_init( int port )
     struct sockaddr_in my_addr;
     int listenfd;
     if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-        x_perror("socket");
+        log_fatal("socket");
         exit(1);
     } 
     else{
-        x_printf("SOCKET CREATE SUCCESS!\n");
+    	log_info("SOCKET CREATE SUCCESS!");
     }
 
     /* set nonblock */
@@ -579,19 +580,19 @@ static int socket_init( int port )
     my_addr.sin_addr.s_addr = INADDR_ANY;//inet_addr("127.0.0.1");
 
     if (bind(listenfd, (struct sockaddr *) &my_addr, sizeof(struct sockaddr))== -1) {
-        x_perror("bind");
+        log_fatal("bind");
         exit(1);
     } 
     else{
-        x_printf("IP BIND SUCCESS!\n");
+    	log_info("IP BIND SUCCESS!");
     }
 
     if (listen(listenfd, BACKLOG) == -1) {
-        x_perror("listen");
+    	log_fatal("listen");
         exit(1);
     } 
     else{
-        x_printf("LISTEN SUCCESS,PORT:%d\n", port);
+    	log_info("LISTEN SUCCESS,PORT:%d", port);
     }
     return listenfd;
 }
@@ -625,7 +626,7 @@ static void setup_thread(void)
     /* create threads pool */
     g_work_threads = (WORK_THREAD *)calloc(NUM_THREADS, sizeof(WORK_THREAD));
     if (!g_work_threads) {
-        x_perror("Can't calloc work threads\n");
+    	log_fatal("Can't calloc work threads.");
         exit(1);
     }
     /* init threads pool */
@@ -634,7 +635,7 @@ static void setup_thread(void)
         /* create threads loop */
         g_work_threads[i].loop = ev_loop_new (EVBACKEND_EPOLL | EVFLAG_NOENV);
         if (!g_work_threads[i].loop) {
-            x_perror("Can't allocate event base\n");
+        	log_info("Can't allocate event base.");
             exit(1);
         }
 
@@ -654,8 +655,7 @@ static void setup_thread(void)
         /* create thread */
         pthread_attr_init(&attr);
         if ((ret = pthread_create(&thread, &attr, start_pthread, &g_work_threads[i])) != 0) {
-            x_perror("Can't create thread");
-            //fprintf(stderr, "Can't create thread: %s\n", strerror(ret));
+        	log_info("Can't create thread.");
             exit(1);
         }
     }
@@ -670,7 +670,7 @@ static void setup_thread(void)
 
 static void *start_master(void *arg)
 {
-    x_printf("CREATE MASTER SUCESS!\n");
+	log_info("CREATE MASTER SUCESS!");
     g_work_type = master;
     int listen = socket_init(W_PORT);
     g_master_thread.loop = ev_default_loop(0);
@@ -693,7 +693,7 @@ static void setup_master(void)
     /* create thread */
     pthread_attr_init(&attr);
     if ((ret = pthread_create(&thread, &attr, start_master, NULL)) != 0) {
-        x_perror("Can't create thread");
+    	log_info("Can't create thread.");
         exit(1);
     }
 }
@@ -703,24 +703,23 @@ static void signal_callback(int sig)
     int quit = 0;
     switch(sig) {
         case SIGTERM:
-            x_printf("Receive signal: SIGTERM.\n");
+        	log_info("Receive signal: SIGTERM.");
             quit = 1;
             break;
-        case SIGINT: {
-                         x_printf("Receive signal: SIGINT.\n");
-                         quit = 1;
-                         break;
-                     }
+        case SIGINT:
+        	log_info("Receive signal: SIGINT.");
+            quit = 1;
+            break;
         case SIGUSR1: // user defined.
-                     x_printf("Receive signal: SIGUSR1.\n");
-                     quit = 1;
-                     break;
+        	log_info("Receive signal: SIGUSR1.\n");
+            quit = 1;
+            break;
         default:
-                     break;
+            break;
     }
 
     if (quit) {
-        x_printf("exit the loops.\n");
+    	log_info("Exit the loops.");
         if (g_dispatcher_thread.loop) {
             ev_io_stop(g_dispatcher_thread.loop, &(g_dispatcher_thread.accept_watcher));
             ev_break(g_dispatcher_thread.loop, EVBREAK_ALL);
@@ -788,7 +787,7 @@ int main(int argc, char** argv)
     /* initial the level db and start it. */
 	char datadir[8] = "data";
     if(0 != ctl_ldb_init(datadir)) {
-        x_perror("Failed to initial the leveldb.");
+    	log_info("Failed to initial the leveldb.");
         exit(EXIT_FAILURE);
     }
 
@@ -804,6 +803,6 @@ int main(int argc, char** argv)
     /* remove pid file. */
     remove_pid_file();
 
-    x_printf("Exit tsdb.\n");
+    log_info("Exit tsdb.");
     return 0;
 }

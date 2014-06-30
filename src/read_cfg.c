@@ -1,9 +1,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <json.h>
+
+#include "read_cfg.h"
 #include "main.h"
 #include "utils.h"
-#include "read_cfg.h"
+#include "logger.h"
 
 void read_cfg(struct cfg_info *p_cfg, char *cfg_file)
 {
@@ -68,6 +70,6 @@ void read_cfg(struct cfg_info *p_cfg, char *cfg_file)
 
     return;
 fail:
-    x_printf("invalid config file :%s\n", cfg_file);
+    log_fatal("invalid config file :%s\n", cfg_file);
     exit(EXIT_FAILURE);
 }

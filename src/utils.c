@@ -8,9 +8,10 @@
 #include <unistd.h>
 #include <ctype.h>
 
+#include "utils.h"
 #include "main.h"
 #include "read_cfg.h"
-#include "utils.h"
+#include "logger.h"
 
 
 char *x_strdup(const char *src)
@@ -24,25 +25,8 @@ char *x_strdup(const char *src)
     return out; 
 }
 
+extern struct cfg_info g_cfg_pool;
 
-int get_overplus_time(void)
-{
-    static int g_mon = -1;
-
-    time_t t_now = time(NULL);
-    struct tm *p_tm = localtime(&t_now);
-    struct tm tm = {0};
-    if (g_mon != p_tm->tm_mon) {
-        g_mon = p_tm->tm_mon;
-        x_printf("current month:             %d\n", g_mon);
-        return 0;
-    }
-    tm.tm_mon = (p_tm->tm_mon + 1) % 12;
-    tm.tm_year = (p_tm->tm_mon == 11) ? (p_tm->tm_year + 1):( p_tm->tm_year);
-    time_t t_end = timelocal(&tm);
-    int space = t_end - t_now;
-    return (space > 0)?space:1;
-}
 
 int get_current_time(void)
 {
@@ -51,58 +35,22 @@ int get_current_time(void)
     return (tv.tv_sec + 8*60*60) % (ONE_DAY_TIMESTAMP);
 }
 
-extern struct cfg_info g_cfg_pool;
-static int g_new_log_file = 0;
-static int g_old_log_file = 0;
+
 
 void open_new_log(void)
 {
-    /*recode old file*/
-    g_old_log_file = g_new_log_file;
-    /*open new file*/
-    time_t t_now = time(NULL);
-    struct tm *p_tm = localtime(&t_now);
     char name[512] = {0};
-    snprintf(name, (sizeof(name) - 1), "%s%s%s_%04d%02d.log", g_cfg_pool.log_path, "/", g_cfg_pool.log_file, 1900 + p_tm->tm_year, 1 + p_tm->tm_mon);
-    g_new_log_file = open(name, O_WRONLY | O_APPEND | O_CREAT, S_IRUSR|S_IWUSR);
+    snprintf(name, (sizeof(name) - 1), "%s%s%s.log", g_cfg_pool.log_path, "/", g_cfg_pool.log_file);
 
-    if(-1 == g_new_log_file)
-    {
-        x_printf("failed to open log file: %s\n", name);
-        fprintf(stderr, "failed to open log file: %s.\n", name);
-        exit(1);
-    }
+    open_log(name, g_cfg_pool.log_verbosity, 1, 256*1024*1024);
 }
 
 void close_old_log(void)
 {
-    close(g_old_log_file);
+	close_log();
 }
 
-void dyn_log( int level, const char *fmt, ... )
-{
-    if (level > g_cfg_pool.log_verbosity)
-        return; /* too verbose */
 
-    /* get current time and log level */
-    time_t now = time(NULL);
-    char time_buf[32] = {0};
-    strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", localtime(&now));
-    static const char lv[] = "EWINDA";
-    dprintf(g_new_log_file, "%s|%c|", time_buf, lv[level]);
-
-    /* write message. */
-    va_list ap;
-    va_start(ap, fmt);
-    vdprintf(g_new_log_file, fmt, ap);
-    va_end(ap);
-
-#if 0
-    /* write to log and flush to disk. */
-    fsync(g_new_log_file);
-    //fdatasync(g_new_log_file);
-#endif
-}
 
 void check_pid_file(void)
 {
@@ -123,14 +71,14 @@ void write_pid_file(void)
     FILE *fp = fopen(pidfile, "w");
 
     if(!fp){
-        x_perror("failed to open pid file: %s\n", pidfile);
+        log_fatal("failed to open pid file: %s", pidfile);
         exit(1);
     }
 
     char buf[128];
     pid_t pid = getpid();
     snprintf(buf, sizeof(buf), "%d", pid);
-    x_printf("pidfile: %s, pid: %d\n", pidfile, pid);
+    log_info("pidfile: %s, pid: %d", pidfile, pid);
     fwrite(buf, 1, strlen(buf), fp);
     fclose(fp);
 }

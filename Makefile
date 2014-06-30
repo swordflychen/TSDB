@@ -29,6 +29,7 @@ OBJ = $(addprefix $(OBJ_DIR)/, \
       read_cfg.o \
       ctl.o \
       utils.o \
+	  logger.o \
       )
 
 help:

@@ -6,38 +6,8 @@
 #include <sys/time.h>
 
 #include "utils.h"
+#include "logger.h"
 
-#define NONE            "\x1B[m"
-#define GRAY            "\x1B[0;30m"
-#define LIGHT_GRAY      "\x1B[1;30m"
-#define RED             "\x1B[0;31m"
-#define LIGHT_RED       "\x1B[1;31m"
-#define GREEN           "\x1B[0;32m"
-#define LIGHT_GREEN     "\x1B[1;32m"
-#define YELLOW          "\x1B[0;33m"
-#define LIGHT_YELLOW    "\x1B[1;33m"
-#define BLUE            "\x1B[0;34m"
-#define LIGHT_BLUE      "\x1B[1;34m"
-#define PURPLE          "\x1B[0;35m"
-#define LIGHT_PURPLE    "\x1B[1;35m"
-#define CYAN            "\x1B[0;36m"
-#define LIGHT_CYAN      "\x1B[1;36m"
-#define WHITE           "\x1B[0;37m"
-#define LIGHT_WHITE     "\x1B[1;37m"
-
-#define dbg(f)  fprintf(f, CYAN "FILE--> %20s | " YELLOW "FUN--> %20s | " PURPLE "LINE--> %4d | " BLUE "MSG--> ", __FILE__, __FUNCTION__, __LINE__)
-#define ero(f)  fprintf(f, CYAN "FILE--> %20s | " YELLOW "FUN--> %20s | " PURPLE "LINE--> %4d | " RED "MSG--> ", __FILE__, __FUNCTION__, __LINE__)
-
-#ifdef OPEN_DEBUG
-#define x_perror(msg, ...)	{ ero(stderr); fprintf(stderr, RED msg NONE, ##__VA_ARGS__ ); perror("\n"); }
-#define x_printf(msg, ...)	{ dbg(stdout); fprintf(stdout, BLUE msg NONE, ##__VA_ARGS__ ); }
-#define x_out_time(x)		{ gettimeofday( ((struct timeval *)x), NULL ); \
-                                  printf("time: %ld.%ld s\n", ((struct timeval *)x)->tv_sec, ((struct timeval *)x)->tv_usec); }
-#else
-#define x_perror(msg, ...)	{ dyn_log( LOGLV_ERROR, msg, ##__VA_ARGS__ ); }
-#define x_printf(msg, ...)	{ dyn_log( LOGLV_DEBUG, msg, ##__VA_ARGS__ ); };
-#define x_out_time(x)		;
-#endif
 
 #define MAX_DEF_LEN	1024*1024
 #define BACKLOG		1024

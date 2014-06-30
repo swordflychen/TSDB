@@ -8,6 +8,7 @@
 #include "ctl.h"
 #include "version.h"
 #include "read_cfg.h"
+#include "logger.h"
 
 extern size_t LDB_WRITE_BUFFER_SIZE;
 extern size_t LDB_BLOCK_SIZE;
@@ -180,7 +181,7 @@ char *ldb_lrangeget(struct _leveldb_stuff *ldbs, const char *pre_key, size_t pre
         while (leveldb_iter_valid(iter)) {
             /* parse kv */
             p_key = (char *) leveldb_iter_key(iter, &klen);
-            x_printf("%p iter key = %s, klen = %ld\n", p_key, p_key, klen);
+            log_debug("%p iter key = %s, klen = %ld\n", p_key, p_key, klen);
 
             p_val = (char *) leveldb_iter_value(iter, &vlen);
 
@@ -190,7 +191,7 @@ char *ldb_lrangeget(struct _leveldb_stuff *ldbs, const char *pre_key, size_t pre
             }
 
             if (0 > strncmp(ed_key, p_key, ed_klen)) {
-                x_printf("--------------break------------------\n");
+            	log_debug("--------------break------------------\n");
                 break;
             }
             /* save parse */
@@ -264,7 +265,7 @@ char *ldb_lrangeget(struct _leveldb_stuff *ldbs, const char *pre_key, size_t pre
         result = (char *) malloc(index);
         if (result == NULL ) goto FAIL_MEMORY;
         memset(result, 0, index);
-        x_printf("----->>>ALL SIZE IS %d, BUFF %p : LEN IS %d\n", *size, result, index);
+        log_debug("----->>>ALL SIZE IS %d, BUFF %p : LEN IS %d\n", *size, result, index);
 
         /* split piece */
         index = GET_NEED_COUNT( list.count, SOME_KV_NODES_COUNT );
@@ -327,7 +328,7 @@ char *ldb_keys(struct _leveldb_stuff *ldbs, const char *ptn, size_t ptn_len, int
     while (leveldb_iter_valid(iter)) {
         /* parse kv */
         p_key = (char *) leveldb_iter_key(iter, &klen);
-        x_printf("%p iter key = %s, klen = %ld\n", p_key, p_key, klen);
+        log_debug("%p iter key = %s, klen = %ld\n", p_key, p_key, klen);
 
         leveldb_iter_get_error(iter, &err);
         if (err) {
@@ -396,7 +397,7 @@ char *ldb_keys(struct _leveldb_stuff *ldbs, const char *ptn, size_t ptn_len, int
         result = (char *) malloc(index);
         if (result == NULL ) goto FAIL_MEMORY;
         memset(result, 0, index);
-        x_printf("----->>>ALL SIZE IS %d, BUFF %p : LEN IS %d\n", *size, result, index);
+        log_debug("----->>>ALL SIZE IS %d, BUFF %p : LEN IS %d\n", *size, result, index);
 
         /* split piece */
         index = GET_NEED_COUNT( list.count, SOME_KV_NODES_COUNT );
@@ -528,7 +529,7 @@ char *ldb_info(struct _leveldb_stuff *ldbs, int *size)
 
     leveldb_free(property);
 
-    x_printf("%s\n", result);
+    log_debug("%s\n", result);
 
     return result;
 }
