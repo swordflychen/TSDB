@@ -67,12 +67,12 @@ tsdb: time series database.
 ```
 * 日志级别（log_level）说明：
 ```
-    0: LOGLV_ERROR
-    1: LOGLV_WARNING
-    2: LOGLV_INFO
-    3: LOGLV_NOTICE
-    4: LOGLV_DEBUG
-    5: LOGLV_ALL
+    0: LEVEL_FATAL
+    1: LEVEL_ERROR
+    2: LEVEL_WARN
+    3: LEVEL_INFO
+    4: LEVEL_DEBUG
+    5: LEVEL_TRACE
 ```
      
 ### 5. 代码结构说明：

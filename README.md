@@ -68,12 +68,12 @@ TSDB: Time Series Database.
 ```
 * Log level(log_level)
 ```
-    0: LOGLV_ERROR
-    1: LOGLV_WARNING
-    2: LOGLV_INFO
-    3: LOGLV_NOTICE
-    4: LOGLV_DEBUG
-    5: LOGLV_ALL
+    0: LEVEL_FATAL
+    1: LEVEL_ERROR
+    2: LEVEL_WARN
+    3: LEVEL_INFO
+    4: LEVEL_DEBUG
+    5: LEVEL_TRACE
 ```
      
 ### 5. Source code
