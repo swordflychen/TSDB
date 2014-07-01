@@ -51,6 +51,11 @@ void read_cfg(struct cfg_info *p_cfg, char *cfg_file)
         p_cfg->log_verbosity = json_object_get_int(obj);
     } else goto fail;
 
+    /* mode configure. */
+    if (json_object_object_get_ex(cfg, "ldb_readonly_switch", &obj)) {
+        p_cfg->ldb_readonly_switch = json_object_get_int64(obj);
+    } else goto fail;
+
     /* ldb configure. */
     if (json_object_object_get_ex(cfg, "ldb_write_buffer_size", &obj)) {
         p_cfg->ldb_write_buffer_size = json_object_get_int64(obj);

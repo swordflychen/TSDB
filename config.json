@@ -2,7 +2,7 @@
         "w_port": 6661,
         "r_port": 6662,
 
-        "max_connect": 100,
+        "max_connect": 50,
         "num_threads": 8,
 
         "work_path": "./var",
@@ -10,6 +10,7 @@
         "log_file": "access",
         "log_level": 5,
 
+        "ldb_readonly_switch": 0,
         "ldb_write_buffer_size": 67108864,
         "ldb_block_size": 32768,
         "ldb_cache_lru_size": 67108864,

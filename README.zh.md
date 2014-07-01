@@ -60,6 +60,7 @@ tsdb: time series database.
     log_file：string，日志文件名称；
     log_level：integer，日志级别（0-5），具体见下面的日志级别；
     
+    ldb_readonly_switch: integer, 只读按钮；
     ldb_write_buffer_size：integer，db写的缓存大小；
     ldb_block_size：integer，db块的大小；
     ldb_cache_lru_size：integer，db lru的cache大小；

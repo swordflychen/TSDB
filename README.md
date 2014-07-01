@@ -61,6 +61,7 @@ TSDB: Time Series Database.
     log_file: string, log file name.
     log_level: integer, log level, the details see below.
     
+    ldb_readonly_switch: integer, read only switch.
     ldb_write_buffer_size: integer, write buffer size in bytes. 
     ldb_block_size: integer, block size in bytes.
     ldb_cache_lru_size: integer, lru cache size in bytes.

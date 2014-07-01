@@ -463,6 +463,12 @@ char *ldb_info(struct _leveldb_stuff *ldbs, int *size)
     ++cnt;
     *size += strlen(pid) + get_number_len(strlen(pid));
 
+    /* mode. */
+    char mode[32] = { 0 };
+    sprintf(mode, "mode: %s", LDB_READONLY_SWITCH ? "readonly" : "read/write");
+    ++cnt;
+    *size += strlen(mode) + get_number_len(strlen(mode));
+
     /* write_port */
     char wport[32] = { 0 };
     sprintf(wport, "write_port: %d", W_PORT);
@@ -516,6 +522,7 @@ char *ldb_info(struct _leveldb_stuff *ldbs, int *size)
     ptr = set_bulk(ptr, svr, strlen(svr));
     ptr = set_bulk(ptr, vers, strlen(vers));
     ptr = set_bulk(ptr, os, strlen(os));
+    ptr = set_bulk(ptr, mode, strlen(mode));
     ptr = set_bulk(ptr, pid, strlen(pid));
     ptr = set_bulk(ptr, wport, strlen(wport));
     ptr = set_bulk(ptr, rport, strlen(rport));
