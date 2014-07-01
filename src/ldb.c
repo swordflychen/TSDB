@@ -558,15 +558,32 @@ int ldb_put(struct _leveldb_stuff *ldbs, const char *key, size_t klen, const cha
 int ldb_delete(struct _leveldb_stuff *ldbs, const char *key, size_t klen)
 {
     char* err = NULL;
+	char *retval = NULL;
+	size_t retvlen = 0;
+	retval = leveldb_get(ldbs->db, ldbs->roptions, key, klen, &retvlen, &err);
+	if (err) {
+		fprintf(stderr, "\n%s\n", err);
+		leveldb_free(err);
+		err = NULL;
+		return -1;
+	}
+	leveldb_free(retval);
+
+	/* if not found, then return 0. */
+	if (retvlen == 0) {
+		return 0;
+	}
+
+	/* if found, delete it, then return 1. */
     leveldb_delete(ldbs->db, ldbs->woptions, key, klen, &err);
     if (err) {
         fprintf(stderr, "%s", err);
         leveldb_free(err);
         err = NULL;
         return -1;
-    } else {
-        return 0;
     }
+
+    return 1;
 }
 
 int ldb_batch_put(struct _leveldb_stuff *ldbs, const char *key, size_t klen, const char *value, size_t vlen)

@@ -155,7 +155,7 @@ int ctl_cmd_parse(struct data_node *p_node)
                 PARSE_LEN(p_node->klen);
                 PARSE_MEMBER(p_node->key, p_node->klen);
                 ok = ldb_delete(g_ldb, &data[ p_node->key ], p_node->klen);
-                goto W_OUT_PUT;
+                goto D_OUT_PUT;
 
             case LDB_MSET:/* use one thread to write, otherwise (one thread should use one leveldb_writebatch_t) or (add a mutex lock) */
                 if(LDB_READONLY_SWITCH == 1) {
@@ -248,7 +248,7 @@ int ctl_cmd_parse(struct data_node *p_node)
 				return X_DATA_IS_ALL;
 
             case LDB_QUIT:
-            	log_debug("-----------------------------------------------------\n");
+            	log_debug("-----------------------------------------------------");
                 return X_CLIENT_QUIT;
 
             default:
@@ -260,12 +260,25 @@ E_OUT_PUT:
 
 W_OUT_PUT:
         if (ok == 0) {
-        	log_debug("------------------------------------------\n");
+        	log_debug("------------------------------------------");
             add_send_node(p_node, OPT_OK, strlen(OPT_OK));
-            return X_DATA_IS_ALL; 
+            return X_DATA_IS_ALL;
         } else {
             add_send_node(p_node, OPT_LDB_ERROR, strlen(OPT_LDB_ERROR));
-            return X_ERROR_LDB; 
+            return X_ERROR_LDB;
+        }
+
+D_OUT_PUT:
+        if (ok == 0) {
+	        log_debug("------------------------------------------");
+            add_send_node(p_node, OPT_ZERO, strlen(OPT_ZERO));
+            return X_DATA_IS_ALL;
+        } else if (ok == 1) {
+            add_send_node(p_node, OPT_ONE, strlen(OPT_ONE));
+            return X_DATA_IS_ALL;
+        } else {
+            add_send_node(p_node, OPT_LDB_ERROR, strlen(OPT_LDB_ERROR));
+            return X_ERROR_LDB;
         }
 
 R_BULK_OUT_PUT:
