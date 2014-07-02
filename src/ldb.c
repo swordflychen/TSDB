@@ -610,7 +610,6 @@ int ldb_delete(struct _leveldb_stuff *ldbs, const char *key, size_t klen)
         err = NULL;
         return -1;
     }
-
     return 1;
 }
 
@@ -648,5 +647,5 @@ int ldb_exists(struct _leveldb_stuff *ldbs, const char *key, size_t klen)
         return -1;
     }
     leveldb_free(val);
-    return vlen;
+    return vlen == 0 ? 0 : 1;
 }
