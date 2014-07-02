@@ -20,26 +20,25 @@
 #include "read_cfg.h"
 #include "logger.h"
 
-
 int G_PAGE_SIZE = 0;
 
 struct timeval g_dbg_time;
 struct data_node *g_cache_pool = NULL;
-static DISPATCHER_THREAD g_dispatcher_thread = {0};/* dispatcher read request */
-static DISPATCHER_THREAD g_master_thread = {0};/* do write request */
+static DISPATCHER_THREAD g_dispatcher_thread = { 0 };/* dispatcher read request */
+static DISPATCHER_THREAD g_master_thread = { 0 };/* do write request */
 static WORK_THREAD *g_work_threads = NULL;/* do read request */
 
 static int g_round_robin = 0;
 static int g_init_count = 0;
 static pthread_mutex_t g_init_lock;
 static pthread_cond_t g_init_cond;
-enum process_type{
-    master,
-    child,
-}g_work_type;
+enum process_type
+{
+    master, child,
+} g_work_type;
 
 /*global config*/
-struct cfg_info g_cfg_pool = {};
+struct cfg_info g_cfg_pool = { };
 
 int W_PORT = 0;
 int R_PORT = 0;
@@ -55,9 +54,9 @@ char *LDB_WORK_PATH = NULL;
 
 time_t LDB_START_TIME;
 
-static void first_init(int argc ,char** argv)
+static void first_init(int argc, char** argv)
 {
-	char dftcfg[16] = "config.json";
+    char dftcfg[16] = "config.json";
     if (argc < 2) {
         read_cfg(&g_cfg_pool, dftcfg);
     } else {
@@ -67,7 +66,7 @@ static void first_init(int argc ,char** argv)
     G_PAGE_SIZE = getpagesize();
 
     W_PORT = g_cfg_pool.w_port;
-    R_PORT= g_cfg_pool.r_port;
+    R_PORT = g_cfg_pool.r_port;
     MAX_CONNECT = g_cfg_pool.max_connect;
     NUM_THREADS = g_cfg_pool.num_threads;
 
@@ -75,11 +74,11 @@ static void first_init(int argc ,char** argv)
 
     time(&LDB_START_TIME);
 
-    LDB_READONLY_SWITCH		= g_cfg_pool.ldb_readonly_switch;
-    LDB_WRITE_BUFFER_SIZE	= g_cfg_pool.ldb_write_buffer_size;
-    LDB_BLOCK_SIZE			= g_cfg_pool.ldb_block_size;
-    LDB_CACHE_LRU_SIZE		= g_cfg_pool.ldb_cache_lru_size;
-    LDB_BLOOM_KEY_SIZE		= g_cfg_pool.ldb_bloom_key_size;
+    LDB_READONLY_SWITCH = g_cfg_pool.ldb_readonly_switch;
+    LDB_WRITE_BUFFER_SIZE = g_cfg_pool.ldb_write_buffer_size;
+    LDB_BLOCK_SIZE = g_cfg_pool.ldb_block_size;
+    LDB_CACHE_LRU_SIZE = g_cfg_pool.ldb_cache_lru_size;
+    LDB_BLOOM_KEY_SIZE = g_cfg_pool.ldb_bloom_key_size;
 
     open_new_log();
 
@@ -89,9 +88,10 @@ static void first_init(int argc ,char** argv)
 static void pools_init()
 {
     int i;
-    g_cache_pool = (struct data_node *)malloc( sizeof(struct data_node) * MAX_CONNECT );
-    memset( g_cache_pool, 0, sizeof(struct data_node) * MAX_CONNECT );
-    for(i=0; i<MAX_CONNECT; i++){
+    g_cache_pool = (struct data_node *) malloc(
+            sizeof(struct data_node) * MAX_CONNECT);
+    memset(g_cache_pool, 0, sizeof(struct data_node) * MAX_CONNECT);
+    for (i = 0; i < MAX_CONNECT; i++) {
         g_cache_pool[i].svbf = g_cache_pool[i].recv;
         g_cache_pool[i].alsize = MAX_DEF_LEN;
         g_cache_pool[i].sdbf = g_cache_pool[i].send;
@@ -102,16 +102,16 @@ static void pools_init()
 static int add_recv_node(struct data_node *p_node, char *input, int add)
 {
     char *old = p_node->svbf;
-    if ( p_node->alsize < (p_node->gtlen + add) ){
+    if (p_node->alsize < (p_node->gtlen + add)) {
         p_node->alsize += MAX_DEF_LEN;
-        if ( ! (p_node->svbf = (char *)malloc(p_node->alsize))){
+        if (!(p_node->svbf = (char *) malloc(p_node->alsize))) {
             return X_MALLOC_FAILED;
         }
-        memset(p_node->svbf, 0,  p_node->alsize);
+        memset(p_node->svbf, 0, p_node->alsize);
         memcpy(p_node->svbf, old, p_node->gtlen);
-        if (old == p_node->recv){
+        if (old == p_node->recv) {
             memset(p_node->recv, 0, MAX_DEF_LEN);
-        }else{
+        } else {
             free(old);
         }
     }
@@ -123,20 +123,21 @@ static int add_recv_node(struct data_node *p_node, char *input, int add)
 int add_send_node(struct data_node *p_node, const char *output, int add)
 {
     char *old = p_node->sdbf;
-    if ( p_node->mxsize < (p_node->mxlen + add) ){
-        p_node->mxsize = GET_NEED_COUNT( (p_node->mxlen + add), MAX_DEF_LEN ) * MAX_DEF_LEN;
-        if ( ! (p_node->sdbf = (char *)malloc(p_node->mxsize)) ){
+    if (p_node->mxsize < (p_node->mxlen + add)) {
+        p_node->mxsize = GET_NEED_COUNT( (p_node->mxlen + add), MAX_DEF_LEN )
+                * MAX_DEF_LEN;
+        if (!(p_node->sdbf = (char *) malloc(p_node->mxsize))) {
             return X_MALLOC_FAILED;
         }
-        memset(p_node->sdbf, 0,  p_node->mxsize);
+        memset(p_node->sdbf, 0, p_node->mxsize);
         memcpy(p_node->sdbf, old, p_node->mxlen);
-        if (old == p_node->send){
+        if (old == p_node->send) {
             memset(p_node->send, 0, MAX_DEF_LEN);
-        }else{
+        } else {
             free(old);
         }
     }
-    if (p_node->sdbf && add > 0){
+    if (p_node->sdbf && add > 0) {
         memcpy(p_node->sdbf + p_node->mxlen, output, add);
     }
     p_node->mxlen += add;
@@ -146,7 +147,7 @@ int add_send_node(struct data_node *p_node, const char *output, int add)
 int set_send_node(struct data_node *p_node, const char *output, int add)
 {
     p_node->mxsize = GET_NEED_COUNT( add, G_PAGE_SIZE ) * G_PAGE_SIZE;
-    p_node->sdbf = (char *)output;
+    p_node->sdbf = (char *) output;
     p_node->mxlen = add;
     return X_DONE_OK;
 }
@@ -154,8 +155,8 @@ static void clean_recv_node(struct data_node *p_node)
 {
     p_node->alsize = MAX_DEF_LEN;
     p_node->gtlen = 0;
-    if (p_node->svbf != p_node->recv){
-        free( p_node->svbf);
+    if (p_node->svbf != p_node->recv) {
+        free(p_node->svbf);
         p_node->svbf = p_node->recv;
     }
     memset(p_node->recv, 0, MAX_DEF_LEN);
@@ -166,15 +167,15 @@ void clean_send_node(struct data_node *p_node)
     p_node->mxsize = MAX_DEF_LEN;
     p_node->mxlen = 0;
     p_node->ptlen = 0;
-    if (p_node->sdbf != p_node->send){
-        free( p_node->sdbf);
+    if (p_node->sdbf != p_node->send) {
+        free(p_node->sdbf);
         p_node->sdbf = p_node->send;
     }
     memset(p_node->send, 0, MAX_DEF_LEN);
 }
 
-
-static void item_init(CQ_ITEM *item) {
+static void item_init(CQ_ITEM *item)
+{
     item->sfd = 0;
     item->port = 0;
     memset(item->szAddr, 0, INET_ADDRSTRLEN);
@@ -183,19 +184,20 @@ static void item_init(CQ_ITEM *item) {
 /*
  * Initializes a connection queue.
  */
-static void cq_init(CQ_LIST *list) {
+static void cq_init(CQ_LIST *list)
+{
     pthread_mutex_init(&list->lock, NULL);
     list->head = NULL;
     list->tail = NULL;
 }
-
 
 /*
  * Looks for an item on a connection queue, but doesn't block if there isn't
  * one.
  * Returns the item, or NULL if no item is available
  */
-static CQ_ITEM *cq_pop(CQ_LIST *list) {
+static CQ_ITEM *cq_pop(CQ_LIST *list)
+{
     //pthread_mutex_lock(&list->lock);
     CQ_ITEM *item = list->head;
     if (item != NULL) {
@@ -207,11 +209,11 @@ static CQ_ITEM *cq_pop(CQ_LIST *list) {
     return item;
 }
 
-
 /*
  * Adds an item to a connection queue.
  */
-static void cq_push(CQ_LIST *list, CQ_ITEM *item) {
+static void cq_push(CQ_LIST *list, CQ_ITEM *item)
+{
     item->next = NULL;
     //pthread_mutex_lock(&list->lock);
     if (list->tail == NULL)
@@ -223,26 +225,26 @@ static void cq_push(CQ_LIST *list, CQ_ITEM *item) {
 }
 
 /* callback functions. */
-static void accept_callback	(struct ev_loop *loop, ev_io *w, int revents);
-static void recv_callback	(struct ev_loop *loop, ev_io *w, int revents);
-static void send_callback	(struct ev_loop *loop, ev_io *w, int revents);
-static void async_callback	(struct ev_loop *loop, ev_async *w, int revents);
-static void check_callback	(struct ev_loop *loop, ev_check *w, int revents);
+static void accept_callback(struct ev_loop *loop, ev_io *w, int revents);
+static void recv_callback(struct ev_loop *loop, ev_io *w, int revents);
+static void send_callback(struct ev_loop *loop, ev_io *w, int revents);
+static void async_callback(struct ev_loop *loop, ev_async *w, int revents);
+static void check_callback(struct ev_loop *loop, ev_check *w, int revents);
 #ifdef OPEN_TIME_OUT
-static void timeout_callback	(struct ev_loop *loop, ev_timer *w, int revents);
+static void timeout_callback (struct ev_loop *loop, ev_timer *w, int revents);
 #endif
 
 static void async_callback(struct ev_loop *loop, ev_async *w, int revents)
 {
-    pthread_mutex_lock(&(((WORK_THREAD *)(w->data))->new_conn_queue).lock);
-    WORK_THREAD *p_work = (WORK_THREAD *)(w->data);
-    CQ_ITEM *item = cq_pop( &(p_work->new_conn_queue) );
+    pthread_mutex_lock(&(((WORK_THREAD *) (w->data))->new_conn_queue).lock);
+    WORK_THREAD *p_work = (WORK_THREAD *) (w->data);
+    CQ_ITEM *item = cq_pop(&(p_work->new_conn_queue));
 
     if (item != NULL) {
         /*
-           int leave = ev_loop_depth(loop);
-           log_debug("fd : %d  ev_loop_depth : %d\n", item->sfd, leave);
-           */
+         int leave = ev_loop_depth(loop);
+         log_debug("fd : %d  ev_loop_depth : %d\n", item->sfd, leave);
+         */
 #ifdef OPEN_STATIC
         /* it,s a bug when use static watcher at thread */
         /* because a new fd will start before the old fd to stop when broken */
@@ -265,30 +267,30 @@ static void async_callback(struct ev_loop *loop, ev_async *w, int revents)
 #endif
 
         ev_io_init( p_watcher, recv_callback, item->sfd, EV_READ);
-        ev_io_start( loop, p_watcher );
-        log_debug("thread[%lu] accept: fd :%d  addr:%s port:%d\n", p_work->thread_id, item->sfd, item->szAddr, item->port);
+        ev_io_start(loop, p_watcher);
+        log_debug("thread[%lu] accept: fd :%d  addr:%s port:%d\n",
+                p_work->thread_id, item->sfd, item->szAddr, item->port);
         item_init(item);
     }
-    pthread_mutex_unlock(&(((WORK_THREAD *)(w->data))->new_conn_queue).lock);
+    pthread_mutex_unlock(&(((WORK_THREAD *) (w->data))->new_conn_queue).lock);
 }
-
 
 static void check_callback(struct ev_loop *loop, ev_check *w, int revents)
 {
-    pthread_mutex_lock(&(((WORK_THREAD *)(w->data))->new_conn_queue).lock);
-    WORK_THREAD *p_work = (WORK_THREAD *)(w->data);
+    pthread_mutex_lock(&(((WORK_THREAD *) (w->data))->new_conn_queue).lock);
+    WORK_THREAD *p_work = (WORK_THREAD *) (w->data);
 
-    CQ_ITEM *item =  NULL;
+    CQ_ITEM *item = NULL;
     ev_io *p_watcher = NULL;
-    do{
-        item = cq_pop( &(p_work->new_conn_queue) );
+    do {
+        item = cq_pop(&(p_work->new_conn_queue));
 
         if (item != NULL) {
-        	log_debug("in check_callback!\n");
+            log_debug("in check_callback!\n");
             /*
-               int leave = ev_loop_depth(loop);
-               log_debug("fd : %d  ev_loop_depth : %d\n", item->sfd, leave);
-               */
+             int leave = ev_loop_depth(loop);
+             log_debug("fd : %d  ev_loop_depth : %d\n", item->sfd, leave);
+             */
 #ifdef OPEN_STATIC
             /* it,s a bug when use static watcher at thread */
             /* because a new fd will start before the old fd to stop when broken */
@@ -311,15 +313,15 @@ static void check_callback(struct ev_loop *loop, ev_check *w, int revents)
 #endif
 
             ev_io_init( p_watcher, recv_callback, item->sfd, EV_READ);
-            ev_io_start( loop, p_watcher );
+            ev_io_start(loop, p_watcher);
 
-            log_debug("thread[%lu] accept: fd :%d  addr:%s port:%d\n", p_work->thread_id, item->sfd, item->szAddr, item->port);
+            log_debug("thread[%lu] accept: fd :%d  addr:%s port:%d\n",
+                    p_work->thread_id, item->sfd, item->szAddr, item->port);
             item_init(item);
         }
-    }while(item != NULL);
-    pthread_mutex_unlock(&(((WORK_THREAD *)(w->data))->new_conn_queue).lock);
+    } while (item != NULL);
+    pthread_mutex_unlock(&(((WORK_THREAD *) (w->data))->new_conn_queue).lock);
 }
-
 
 #ifdef OPEN_TIME_OUT
 static void timeout_callback(struct ev_loop *loop, ev_timer *w, int revents)
@@ -340,7 +342,6 @@ static void timeout_callback(struct ev_loop *loop, ev_timer *w, int revents)
 
     /* break this one connect */
     //ev_break(EV_A_ EVBREAK_ONE);
-
     /* clear timer from loop */
     //ev_unloop (EV_A_ EVUNLOOP_ONE); 
 }
@@ -352,25 +353,23 @@ static void accept_callback(struct ev_loop *loop, ev_io *w, int revents)
     int robin;
     struct sockaddr_in sin;
     socklen_t addrlen = sizeof(struct sockaddr);
-    while ((newfd = accept(w->fd, (struct sockaddr *)&sin, &addrlen)) < 0) {
+    while ((newfd = accept(w->fd, (struct sockaddr *) &sin, &addrlen)) < 0) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             /* these are transient, so don't log anything. */
-            continue; 
-        }
-        else {
-        	log_debug("accept error.[%s]\n", strerror(errno));
+            continue;
+        } else {
+            log_debug("accept error.[%s]\n", strerror(errno));
             return;
         }
     }
-    if (newfd >= MAX_CONNECT){
+    if (newfd >= MAX_CONNECT) {
         send(newfd, FETCH_MAX_CNT_MSG, strlen(FETCH_MAX_CNT_MSG), 0);
         close(newfd);
         return;
-    }
-    x_out_time(&g_dbg_time);
+    }x_out_time(&g_dbg_time);
     fcntl(newfd, F_SETFL, fcntl(newfd, F_GETFL) | O_NONBLOCK);
 
-    if ( !pthread_equal(g_master_thread.thread_id, pthread_self()) ) {
+    if (!pthread_equal(g_master_thread.thread_id, pthread_self())) {
 #ifdef OPEN_PTHREAD
         robin = g_round_robin%g_init_count;
         pthread_mutex_lock( &(g_work_threads[robin].new_conn_queue).lock );
@@ -382,7 +381,7 @@ static void accept_callback(struct ev_loop *loop, ev_io *w, int revents)
         inet_ntop(AF_INET, &sin.sin_addr, p_item->szAddr, INET_ADDRSTRLEN);
 
         // dispath to a work_thread.
-ACCEPT_LOOP:
+        ACCEPT_LOOP:
         if (!ev_async_pending( &(g_work_threads[robin].async_watcher) )) {
             // the event has not yet been processed (or even noted) by the event
             // loop? (i.e. Is it serviced? If yes then proceed to)
@@ -390,13 +389,13 @@ ACCEPT_LOOP:
             // an EV_ASYNC event on the watcher into the event loop.
             cq_push( &(g_work_threads[robin].new_conn_queue) , p_item);
             ev_async_send(g_work_threads[robin].loop, &(g_work_threads[robin].async_watcher));
-        }else{
+        } else {
             printf("IN ACCEPT_LOOP!\n");
             goto ACCEPT_LOOP;
         }
         g_round_robin++;
         if( g_round_robin == MAX_CONNECT )
-            g_round_robin = 0;
+        g_round_robin = 0;
         pthread_mutex_unlock( &(g_work_threads[robin].new_conn_queue).lock );
 #else
         g_cache_pool[newfd].loop = loop;
@@ -404,7 +403,7 @@ ACCEPT_LOOP:
         ev_io_init(p_watcher, recv_callback, newfd, EV_READ);
         ev_io_start(loop, p_watcher);
 #endif
-    }else{
+    } else {
         g_cache_pool[newfd].loop = loop;
         ev_io *p_watcher = &(g_cache_pool[newfd].io_watcher);
         ev_io_init(p_watcher, recv_callback, newfd, EV_READ);
@@ -423,60 +422,57 @@ ACCEPT_LOOP:
 static void recv_callback(struct ev_loop *loop, ev_io *w, int revents)
 {
     int ret = 0;
-    char temp[MAX_DEF_LEN] = {0};
+    char temp[MAX_DEF_LEN] = { 0 };
 
     x_out_time(&g_dbg_time);
     struct data_node *p_node = &g_cache_pool[w->fd];
     ret = recv(w->fd, temp, MAX_DEF_LEN, 0);/* to use recv (MAX_DEF_LEN - 1) can't make it safe */
     log_debug("   recv size : %d\n", ret);
 
-    if(ret > 0){
+    if (ret > 0) {
         /* save recive data */
         p_node->status = add_recv_node(p_node, temp, ret);
         /* parse recive data */
         p_node->status = ctl_cmd_parse(p_node);
-        switch (p_node->status){
-            case X_DONE_OK:
-            case X_DATA_NO_ALL:
-                return;
-            case X_DATA_IS_ALL:
-                ctl_cmd_done(p_node);
-                clean_recv_node(p_node);
-                break;
-            case X_CLIENT_QUIT:
-                ctl_cmd_done(p_node);
-                clean_recv_node(p_node);
-                goto R_BROKEN;
-            case X_DATA_TOO_LARGE:
-            case X_MALLOC_FAILED:
-            case X_ERROR_CMD:
-            case X_ERROR_LDB:
-            default:
-                ctl_cmd_done(p_node);
-                clean_recv_node(p_node);
-                break;
+        switch (p_node->status) {
+        case X_DONE_OK:
+        case X_DATA_NO_ALL:
+            return;
+        case X_DATA_IS_ALL:
+            ctl_cmd_done(p_node);
+            clean_recv_node(p_node);
+            break;
+        case X_CLIENT_QUIT:
+            ctl_cmd_done(p_node);
+            clean_recv_node(p_node);
+            goto R_BROKEN;
+        case X_DATA_TOO_LARGE:
+        case X_MALLOC_FAILED:
+        case X_ERROR_CMD:
+        case X_ERROR_LDB:
+        default:
+            ctl_cmd_done(p_node);
+            clean_recv_node(p_node);
+            break;
         }
         //w_evt = malloc(sizeof(ev_io));
-    }
-    else if(ret ==0){/* socket has closed when read after */
-    	log_debug("remote socket closed!socket fd: %d\n",w->fd);
+    } else if (ret == 0) {/* socket has closed when read after */
+        log_debug("remote socket closed!socket fd: %d\n", w->fd);
         goto R_BROKEN;
-    }
-    else{
-        if(errno == EAGAIN ||errno == EWOULDBLOCK){
+    } else {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
             return;
-        }
-        else{/* socket is going to close when reading */
-        	log_debug("ret :%d ,close socket fd : %d\n",ret,w->fd);
+        } else {/* socket is going to close when reading */
+            log_debug("ret :%d ,close socket fd : %d\n", ret, w->fd);
             goto R_BROKEN;
         }
     }
-    ev_io_stop(loop,  w);
-    ev_io_init(w, send_callback, w->fd,EV_WRITE);
+    ev_io_stop(loop, w);
+    ev_io_init(w, send_callback, w->fd, EV_WRITE);
     ev_io_start(loop, w);
     /* it will quickly run into  send_callback() when socket is not broken */
     return;
-R_BROKEN:
+    R_BROKEN:
 #ifdef OPEN_TIME_OUT
     ev_timer_stop( loop, &(p_node->timer_watcher) );
 #endif
@@ -503,23 +499,21 @@ static void send_callback(struct ev_loop *loop, ev_io *w, int revents)
 {
     x_out_time(&g_dbg_time);
     struct data_node *p_node = &g_cache_pool[w->fd];
-    if (p_node->mxlen != p_node->ptlen){
+    if (p_node->mxlen != p_node->ptlen) {
         int ret = send(w->fd, p_node->sdbf + p_node->ptlen,
-                p_node->mxlen - p_node->ptlen,
-                0);
-        log_debug("-------> send = %d\n",  ret);
-        if (ret < 0){
+                p_node->mxlen - p_node->ptlen, 0);
+        log_debug("-------> send = %d\n", ret);
+        if (ret < 0) {
             goto S_BROKEN;
         }
         p_node->ptlen += ret;
-        if (p_node->ptlen != p_node->mxlen){
-        	log_debug("no all\n");
+        if (p_node->ptlen != p_node->mxlen) {
+            log_debug("no all\n");
             return;
-        }
-        else{
-        	log_debug("is all\n");
+        } else {
+            log_debug("is all\n");
             clean_send_node(p_node);
-            if (p_node->status < X_DONE_OK){
+            if (p_node->status < X_DONE_OK) {
                 goto S_BROKEN;
             }
         }
@@ -528,12 +522,12 @@ static void send_callback(struct ev_loop *loop, ev_io *w, int revents)
     goto S_BROKEN;
 #else
     ctl_status_clean(p_node);
-    ev_io_stop(loop,  w);
-    ev_io_init(w,recv_callback,w->fd,EV_READ);
+    ev_io_stop(loop, w);
+    ev_io_init(w, recv_callback, w->fd, EV_READ);
     ev_io_start(loop, w);
     return;
 #endif
-S_BROKEN:
+    S_BROKEN:
 #ifdef OPEN_TIME_OUT
     ev_timer_stop( loop, &(p_node->timer_watcher) );
 #endif
@@ -557,42 +551,41 @@ S_BROKEN:
 }
 
 /* socket initial. */
-static int socket_init( int port )
+static int socket_init(int port)
 {
     struct sockaddr_in my_addr;
     int listenfd;
     if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         log_fatal("socket");
         exit(1);
-    } 
-    else{
-    	log_info("SOCKET CREATE SUCCESS!");
+    } else {
+        log_info("SOCKET CREATE SUCCESS!");
     }
 
     /* set nonblock */
     fcntl(listenfd, F_SETFL, fcntl(listenfd, F_GETFL) | O_NONBLOCK);
     /* set reuseaddr */
     int so_reuseaddr = 1;
-    setsockopt(listenfd,SOL_SOCKET,SO_REUSEADDR,&so_reuseaddr,sizeof(so_reuseaddr));
+    setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr,
+            sizeof(so_reuseaddr));
     bzero(&my_addr, sizeof(my_addr));
     my_addr.sin_family = PF_INET;
-    my_addr.sin_port = htons( port );
-    my_addr.sin_addr.s_addr = INADDR_ANY;//inet_addr("127.0.0.1");
+    my_addr.sin_port = htons(port);
+    my_addr.sin_addr.s_addr = INADDR_ANY; //inet_addr("127.0.0.1");
 
-    if (bind(listenfd, (struct sockaddr *) &my_addr, sizeof(struct sockaddr))== -1) {
+    if (bind(listenfd, (struct sockaddr *) &my_addr, sizeof(struct sockaddr))
+            == -1) {
         log_fatal("bind");
         exit(1);
-    } 
-    else{
-    	log_info("IP BIND SUCCESS!");
+    } else {
+        log_info("IP BIND SUCCESS!");
     }
 
     if (listen(listenfd, BACKLOG) == -1) {
-    	log_fatal("listen");
+        log_fatal("listen");
         exit(1);
-    } 
-    else{
-    	log_info("LISTEN SUCCESS,PORT:%d", port);
+    } else {
+        log_info("LISTEN SUCCESS,PORT:%d", port);
     }
     return listenfd;
 }
@@ -608,61 +601,63 @@ static void *start_pthread(void *arg)
     pthread_cond_signal(&g_init_cond);
     pthread_mutex_unlock(&g_init_lock);
 
-
-    WORK_THREAD *this_ptr = (WORK_THREAD *)arg;
+    WORK_THREAD *this_ptr = (WORK_THREAD *) arg;
     this_ptr->thread_id = pthread_self();
     ev_loop(this_ptr->loop, 0);
     return NULL;
 }
 
-static void setup_thread(void) 
+static void setup_thread(void)
 {
-    pthread_t       thread;
-    pthread_attr_t  attr;
-    int             ret;
+    pthread_t thread;
+    pthread_attr_t attr;
+    int ret;
 
     pthread_mutex_init(&g_init_lock, NULL);
     pthread_cond_init(&g_init_cond, NULL);
     /* create threads pool */
-    g_work_threads = (WORK_THREAD *)calloc(NUM_THREADS, sizeof(WORK_THREAD));
+    g_work_threads = (WORK_THREAD *) calloc(NUM_THREADS, sizeof(WORK_THREAD));
     if (!g_work_threads) {
-    	log_fatal("Can't calloc work threads.");
+        log_fatal("Can't calloc work threads.");
         exit(1);
     }
     /* init threads pool */
     int i = 0;
     for (i = 0; i < NUM_THREADS; i++) {
         /* create threads loop */
-        g_work_threads[i].loop = ev_loop_new (EVBACKEND_EPOLL | EVFLAG_NOENV);
+        g_work_threads[i].loop = ev_loop_new(EVBACKEND_EPOLL | EVFLAG_NOENV);
         if (!g_work_threads[i].loop) {
-        	log_info("Can't allocate event base.");
+            log_info("Can't allocate event base.");
             exit(1);
         }
 
         /* init threads watcher */
         g_work_threads[i].async_watcher.data = &g_work_threads[i];
         ev_async_init( &(g_work_threads[i].async_watcher), async_callback);
-        ev_async_start(g_work_threads[i].loop, &(g_work_threads[i].async_watcher) );/* Listen for notifications from other threads */
+        ev_async_start(g_work_threads[i].loop,
+                &(g_work_threads[i].async_watcher));/* Listen for notifications from other threads */
 
         /* init check watcher */
         g_work_threads[i].check_watcher.data = &g_work_threads[i];
         ev_check_init( &(g_work_threads[i].check_watcher), check_callback);
-        ev_check_start(g_work_threads[i].loop, &(g_work_threads[i].check_watcher) );
+        ev_check_start(g_work_threads[i].loop,
+                &(g_work_threads[i].check_watcher));
 
         /* init queue list */
-        cq_init( &(g_work_threads[i].new_conn_queue) );
+        cq_init(&(g_work_threads[i].new_conn_queue));
 
         /* create thread */
         pthread_attr_init(&attr);
-        if ((ret = pthread_create(&thread, &attr, start_pthread, &g_work_threads[i])) != 0) {
-        	log_info("Can't create thread.");
+        if ((ret = pthread_create(&thread, &attr, start_pthread,
+                &g_work_threads[i])) != 0) {
+            log_info("Can't create thread.");
             exit(1);
         }
     }
 
     /* Wait for all the threads to set themselves up before returning. */
     pthread_mutex_lock(&g_init_lock);
-    while ( g_init_count < NUM_THREADS ) {
+    while (g_init_count < NUM_THREADS) {
         pthread_cond_wait(&g_init_cond, &g_init_lock);
     }
     pthread_mutex_unlock(&g_init_lock);
@@ -670,30 +665,31 @@ static void setup_thread(void)
 
 static void *start_master(void *arg)
 {
-	log_info("CREATE MASTER SUCESS!");
+    log_info("CREATE MASTER SUCESS!");
     g_work_type = master;
     int listen = socket_init(W_PORT);
     g_master_thread.loop = ev_default_loop(0);
     g_master_thread.thread_id = pthread_self();
 
-    ev_io_init( &(g_master_thread.accept_watcher), accept_callback, listen, EV_READ);
-    ev_io_start( g_master_thread.loop, &(g_master_thread.accept_watcher) );
+    ev_io_init( &(g_master_thread.accept_watcher), accept_callback, listen,
+            EV_READ);
+    ev_io_start(g_master_thread.loop, &(g_master_thread.accept_watcher));
 
     ev_loop(g_master_thread.loop, 0);
     ev_loop_destroy(g_master_thread.loop);
     return NULL;
 }
 
-static void setup_master(void) 
+static void setup_master(void)
 {
-    pthread_t       thread;
-    pthread_attr_t  attr;
-    int             ret;
+    pthread_t thread;
+    pthread_attr_t attr;
+    int ret;
 
     /* create thread */
     pthread_attr_init(&attr);
     if ((ret = pthread_create(&thread, &attr, start_master, NULL)) != 0) {
-    	log_info("Can't create thread.");
+        log_info("Can't create thread.");
         exit(1);
     }
 }
@@ -701,27 +697,28 @@ static void setup_master(void)
 static void signal_callback(int sig)
 {
     int quit = 0;
-    switch(sig) {
-        case SIGTERM:
-        	log_info("Receive signal: SIGTERM.");
-            quit = 1;
-            break;
-        case SIGINT:
-        	log_info("Receive signal: SIGINT.");
-            quit = 1;
-            break;
-        case SIGUSR1: // user defined.
-        	log_info("Receive signal: SIGUSR1.\n");
-            quit = 1;
-            break;
-        default:
-            break;
+    switch (sig) {
+    case SIGTERM:
+        log_info("Receive signal: SIGTERM.");
+        quit = 1;
+        break;
+    case SIGINT:
+        log_info("Receive signal: SIGINT.");
+        quit = 1;
+        break;
+    case SIGUSR1: // user defined.
+        log_info("Receive signal: SIGUSR1.\n");
+        quit = 1;
+        break;
+    default:
+        break;
     }
 
     if (quit) {
-    	log_info("Exit the loops.");
+        log_info("Exit the loops.");
         if (g_dispatcher_thread.loop) {
-            ev_io_stop(g_dispatcher_thread.loop, &(g_dispatcher_thread.accept_watcher));
+            ev_io_stop(g_dispatcher_thread.loop,
+                    &(g_dispatcher_thread.accept_watcher));
             ev_break(g_dispatcher_thread.loop, EVBREAK_ALL);
         }
         if (g_master_thread.loop) {
@@ -742,9 +739,9 @@ static void register_signals()
 {
     signal(SIGPIPE, SIG_IGN);
 
-    signal(SIGINT, signal_callback);	// Ctrl-C
-    signal(SIGTERM, signal_callback);	// kill
-    signal(SIGUSR1, signal_callback);	// user defined signal.
+    signal(SIGINT, signal_callback); // Ctrl-C
+    signal(SIGTERM, signal_callback); // kill
+    signal(SIGUSR1, signal_callback); // user defined signal.
 }
 
 static void run()
@@ -752,21 +749,23 @@ static void run()
     int listen;
 
     /* setup master (write thread). */
-    setup_master();//master is use ev_default_loop(0);
+    setup_master(); //master is use ev_default_loop(0);
 
     /* setup child (read threads). */
     g_work_type = child;
     listen = socket_init(R_PORT);
 #ifdef OPEN_PTHREAD
-    g_dispatcher_thread.loop = ev_loop_new (EVBACKEND_EPOLL | EVFLAG_NOENV);//ev_loop_new(0);
+    g_dispatcher_thread.loop = ev_loop_new (EVBACKEND_EPOLL | EVFLAG_NOENV); //ev_loop_new(0);
     setup_thread();
 #else
-    g_dispatcher_thread.loop = ev_loop_new (EVBACKEND_EPOLL | EVFLAG_NOENV);
+    g_dispatcher_thread.loop = ev_loop_new(EVBACKEND_EPOLL | EVFLAG_NOENV);
 #endif
     g_dispatcher_thread.thread_id = pthread_self();
 
-    ev_io_init( &(g_dispatcher_thread.accept_watcher), accept_callback, listen, EV_READ);
-    ev_io_start( g_dispatcher_thread.loop, &(g_dispatcher_thread.accept_watcher) );
+    ev_io_init( &(g_dispatcher_thread.accept_watcher), accept_callback, listen,
+            EV_READ);
+    ev_io_start(g_dispatcher_thread.loop,
+            &(g_dispatcher_thread.accept_watcher));
 
     /* start child. */
     ev_loop(g_dispatcher_thread.loop, 0);
@@ -785,9 +784,9 @@ int main(int argc, char** argv)
     pools_init();
 
     /* initial the level db and start it. */
-	char datadir[8] = "data";
-    if(0 != ctl_ldb_init(datadir)) {
-    	log_info("Failed to initial the leveldb.");
+    char datadir[8] = "data";
+    if (0 != ctl_ldb_init(datadir)) {
+        log_info("Failed to initial the leveldb.");
         exit(EXIT_FAILURE);
     }
 

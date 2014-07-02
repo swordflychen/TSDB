@@ -19,7 +19,8 @@
 
 #define ONE_DAY_TIMESTAMP   (24*60*60)
 
-enum {
+enum
+{
     LOGLV_ERROR = 0,
     LOGLV_WARNING = 1,
     LOGLV_INFO = 2,
@@ -41,7 +42,7 @@ extern void close_old_log(void);
 /*
  * Write the log.
  */
-extern void dyn_log( int level, const char *fmt, ... );
+extern void dyn_log(int level, const char *fmt, ...);
 
 /*
  * Check pid file.
@@ -77,12 +78,14 @@ int get_current_time(void);
  * Regular string match.
  * FIXME: not use.
  */
-int string_match_len(const char *pattern, int patternLen, const char *string, int stringLen, int nocase);
+int string_match_len(const char *pattern, int patternLen, const char *string,
+        int stringLen, int nocase);
 
 int string_match(const char *pattern, const char *string, int nocase);
 
 /*
  * Prefix string match.
  */
-int prefix_match_len(const char *pre, int preLen, const char *string, int stringLen);
+int prefix_match_len(const char *pre, int preLen, const char *string,
+        int stringLen);
 

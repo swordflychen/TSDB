@@ -29,11 +29,12 @@ struct _leveldb_stuff *ldb_initialize(char *path)
     leveldb_filterpolicy_t *policy;
     char* err = NULL;
 
-    ldbs = (struct _leveldb_stuff *)malloc(sizeof(struct _leveldb_stuff));
+    ldbs = (struct _leveldb_stuff *) malloc(sizeof(struct _leveldb_stuff));
     memset(ldbs, 0, sizeof(struct _leveldb_stuff));
 
     ldbs->options = leveldb_options_create();
-    snprintf(ldbs->dbname, sizeof(ldbs->dbname), "%s%s%s", LDB_WORK_PATH, "/", path);
+    snprintf(ldbs->dbname, sizeof(ldbs->dbname), "%s%s%s", LDB_WORK_PATH, "/",
+            path);
 
     cache = leveldb_cache_create_lru(LDB_CACHE_LRU_SIZE);
     policy = leveldb_filterpolicy_create_bloom(LDB_BLOOM_KEY_SIZE);
@@ -71,7 +72,7 @@ struct _leveldb_stuff *ldb_initialize(char *path)
         leveldb_free(err);
         err = NULL;
         free(ldbs);
-        return NULL ;
+        return NULL;
     } else {
         return ldbs;
     }
@@ -105,17 +106,19 @@ void ldb_destroy(struct _leveldb_stuff *ldbs)
     free(ldbs);
 }
 
-char *ldb_get(struct _leveldb_stuff *ldbs, const char *key, size_t klen, int *vlen)
+char *ldb_get(struct _leveldb_stuff *ldbs, const char *key, size_t klen,
+        int *vlen)
 {
     char *err = NULL;
     char *val = NULL;
-    val = leveldb_get(ldbs->db, ldbs->roptions, key, klen, (size_t *) vlen, &err);
+    val = leveldb_get(ldbs->db, ldbs->roptions, key, klen, (size_t *) vlen,
+            &err);
     if (err) {
         fprintf(stderr, "\n%s\n", err);
         leveldb_free(err);
         err = NULL;
         *vlen = -1;
-        return NULL ;
+        return NULL;
     } else {
         return val;
     }
@@ -143,7 +146,9 @@ static char *set_bulk(char *dst, const char *put, int len)
     return (ptr + 2);
 }
 
-char *ldb_lrangeget(struct _leveldb_stuff *ldbs, const char *pre_key, size_t pre_klen, const char *st_time, size_t st_tlen, const char *ed_time, size_t ed_tlen, int *size)
+char *ldb_lrangeget(struct _leveldb_stuff *ldbs, const char *pre_key,
+        size_t pre_klen, const char *st_time, size_t st_tlen,
+        const char *ed_time, size_t ed_tlen, int *size)
 {
     char *err = NULL;
     char *result = NULL;
@@ -160,19 +165,21 @@ char *ldb_lrangeget(struct _leveldb_stuff *ldbs, const char *pre_key, size_t pre
     /* piece the start_key && end_key together */
     size_t st_klen = pre_klen + st_tlen;
     size_t ed_klen = pre_klen + ed_tlen;
-    char *st_key = (char *)malloc(st_klen);
-    char *ed_key = (char *)malloc(ed_klen);
+    char *st_key = (char *) malloc(st_klen);
+    char *ed_key = (char *) malloc(ed_klen);
     memcpy(st_key, pre_key, pre_klen);
     memcpy(st_key + pre_klen, st_time, st_tlen);
     memcpy(ed_key, pre_key, pre_klen);
     memcpy(ed_key + pre_klen, ed_time, ed_tlen);
 
-    leveldb_iterator_t* iter = leveldb_create_iterator(ldbs->db, ldbs->roptions);
+    leveldb_iterator_t* iter = leveldb_create_iterator(ldbs->db,
+            ldbs->roptions);
     leveldb_iterator_t* iter_save = iter;
     if (!!leveldb_iter_valid(iter)) {/* first use it is invalid */
-        fprintf(stderr, "%s:%d: this iter is valid already!\n", __FILE__, __LINE__);
+        fprintf(stderr, "%s:%d: this iter is valid already!\n", __FILE__,
+                __LINE__);
         *size = -1;
-        return NULL ;
+        return NULL;
     }
     leveldb_iter_seek(iter, st_key, st_klen);
     p_key = (char *) st_key;
@@ -191,7 +198,7 @@ char *ldb_lrangeget(struct _leveldb_stuff *ldbs, const char *pre_key, size_t pre
             }
 
             if (0 > strncmp(ed_key, p_key, ed_klen)) {
-            	log_debug("--------------break------------------\n");
+                log_debug("--------------break------------------\n");
                 break;
             }
             /* save parse */
@@ -203,13 +210,15 @@ char *ldb_lrangeget(struct _leveldb_stuff *ldbs, const char *pre_key, size_t pre
             index = list.count % SOME_KV_NODES_COUNT;
             if ((list.count / SOME_KV_NODES_COUNT >= 1) && (index == 1)) {
                 /* new store */
-                p_new = (struct some_kv *)malloc(sizeof(struct some_kv));
-                if (p_new == NULL ) {
+                p_new = (struct some_kv *) malloc(sizeof(struct some_kv));
+                if (p_new == NULL) {
                     /* free stroe */
                     index = GET_NEED_COUNT( list.count, SOME_KV_NODES_COUNT );
                     p_tmp = &list.head;
-                    for (i = 0, z = list.count - 1; (i < index) && (p_tmp != NULL ); i++ ) {
-                        for (j = 0; (j < SOME_KV_NODES_COUNT) && (z > 0); j++, z--) {
+                    for (i = 0, z = list.count - 1;
+                            (i < index) && (p_tmp != NULL); i++) {
+                        for (j = 0; (j < SOME_KV_NODES_COUNT) && (z > 0);
+                                j++, z--) {
                             free(p_tmp->nodes[j].key);
                             free(p_tmp->nodes[j].val);
                         }
@@ -237,12 +246,14 @@ char *ldb_lrangeget(struct _leveldb_stuff *ldbs, const char *pre_key, size_t pre
 
             /* save key */
             p_new->nodes[index - 1].klen = klen;
-            p_new->nodes[index - 1].key = (char *)malloc(GET_NEED_COUNT( klen, G_PAGE_SIZE ) * G_PAGE_SIZE);
+            p_new->nodes[index - 1].key = (char *) malloc(
+                    GET_NEED_COUNT( klen, G_PAGE_SIZE ) * G_PAGE_SIZE);
             memcpy(p_new->nodes[index - 1].key, p_key, klen);
 
             /* save val */
             p_new->nodes[index - 1].vlen = vlen;
-            p_new->nodes[index - 1].val = (char *)malloc(GET_NEED_COUNT( vlen, G_PAGE_SIZE ) * G_PAGE_SIZE);
+            p_new->nodes[index - 1].val = (char *) malloc(
+                    GET_NEED_COUNT( vlen, G_PAGE_SIZE ) * G_PAGE_SIZE);
             memcpy(p_new->nodes[index - 1].val, p_val, vlen);
 
             /* find next */
@@ -259,24 +270,28 @@ char *ldb_lrangeget(struct _leveldb_stuff *ldbs, const char *pre_key, size_t pre
         /* has members */
         /* *2\r\n$5\r\nmykey\r\n$5\r\nmyval\r\n */
         *size = strlen("*\r\n") + get_number_len(list.count * 2)
-                + strlen("$\r\n\r\n") * (list.count * 2) + list.knubs + list.klens + list.vnubs
-                + list.vlens;
+                + strlen("$\r\n\r\n") * (list.count * 2) + list.knubs
+                + list.klens + list.vnubs + list.vlens;
         index = GET_NEED_COUNT( *size, G_PAGE_SIZE ) * G_PAGE_SIZE;
         result = (char *) malloc(index);
-        if (result == NULL ) goto FAIL_MEMORY;
+        if (result == NULL)
+            goto FAIL_MEMORY;
         memset(result, 0, index);
-        log_debug("----->>>ALL SIZE IS %d, BUFF %p : LEN IS %d\n", *size, result, index);
+        log_debug("----->>>ALL SIZE IS %d, BUFF %p : LEN IS %d\n",
+                *size, result, index);
 
         /* split piece */
         index = GET_NEED_COUNT( list.count, SOME_KV_NODES_COUNT );
         p_tmp = &list.head;
         sprintf(result, "*%d\r\n", list.count * 2);
         p_dst = result + strlen(result);
-        for (i = 0, z = list.count; (i < index) && (p_tmp != NULL ); i++ ) {
+        for (i = 0, z = list.count; (i < index) && (p_tmp != NULL); i++) {
             for (j = 0; (j < SOME_KV_NODES_COUNT) && (z > 0); j++, z--) {
-                p_dst = set_bulk(p_dst, p_tmp->nodes[j].key, p_tmp->nodes[j].klen);
+                p_dst = set_bulk(p_dst, p_tmp->nodes[j].key,
+                        p_tmp->nodes[j].klen);
                 free(p_tmp->nodes[j].key);
-                p_dst = set_bulk(p_dst, p_tmp->nodes[j].val, p_tmp->nodes[j].vlen);
+                p_dst = set_bulk(p_dst, p_tmp->nodes[j].val,
+                        p_tmp->nodes[j].vlen);
                 free(p_tmp->nodes[j].val);
             }
             p_old = p_tmp;
@@ -296,14 +311,16 @@ char *ldb_lrangeget(struct _leveldb_stuff *ldbs, const char *pre_key, size_t pre
     err = NULL;
     leveldb_iter_destroy(iter);
     *size = -1;
-    return NULL ;
-    FAIL_MEMORY: fprintf(stderr, "%s:%d: FAILED MALLOC !\n", __FILE__, __LINE__);
+    return NULL;
+    FAIL_MEMORY: fprintf(stderr, "%s:%d: FAILED MALLOC !\n", __FILE__,
+            __LINE__);
     leveldb_iter_destroy(iter);
     *size = -1;
-    return NULL ;
+    return NULL;
 }
 
-char *ldb_keys(struct _leveldb_stuff *ldbs, const char *ptn, size_t ptn_len, int *size)
+char *ldb_keys(struct _leveldb_stuff *ldbs, const char *ptn, size_t ptn_len,
+        int *size)
 {
     char *err = NULL;
     char *result = NULL;
@@ -315,12 +332,14 @@ char *ldb_keys(struct _leveldb_stuff *ldbs, const char *ptn, size_t ptn_len, int
     struct kv_list list = { 0 };
     struct some_kv *p_new, *p_old, *p_tmp = NULL;
 
-    leveldb_iterator_t* iter = leveldb_create_iterator(ldbs->db, ldbs->roptions);
+    leveldb_iterator_t* iter = leveldb_create_iterator(ldbs->db,
+            ldbs->roptions);
     leveldb_iterator_t* iter_save = iter;
     if (!!leveldb_iter_valid(iter)) {/* first use it is invalid */
-        fprintf(stderr, "%s:%d: this iter is valid already!\n", __FILE__, __LINE__);
+        fprintf(stderr, "%s:%d: this iter is valid already!\n", __FILE__,
+                __LINE__);
         *size = -1;
-        return NULL ;
+        return NULL;
     }
 
     leveldb_iter_seek(iter, ptn, ptn_len);
@@ -346,13 +365,15 @@ char *ldb_keys(struct _leveldb_stuff *ldbs, const char *ptn, size_t ptn_len, int
         index = list.count % SOME_KV_NODES_COUNT;
         if ((list.count / SOME_KV_NODES_COUNT >= 1) && (index == 1)) {
             /* new store */
-            p_new = (struct some_kv *)malloc(sizeof(struct some_kv));
-            if (p_new == NULL ) {
+            p_new = (struct some_kv *) malloc(sizeof(struct some_kv));
+            if (p_new == NULL) {
                 /* free store */
                 index = GET_NEED_COUNT( list.count, SOME_KV_NODES_COUNT );
                 p_tmp = &list.head;
-                for (i = 0, z = list.count - 1; (i < index) && (p_tmp != NULL ); i++ ) {
-                    for (j = 0; (j < SOME_KV_NODES_COUNT) && (z > 0); j++, z--) {
+                for (i = 0, z = list.count - 1; (i < index) && (p_tmp != NULL);
+                        i++) {
+                    for (j = 0; (j < SOME_KV_NODES_COUNT) && (z > 0);
+                            j++, z--) {
                         free(p_tmp->nodes[j].key);
                     }
                     p_old = p_tmp;
@@ -379,7 +400,8 @@ char *ldb_keys(struct _leveldb_stuff *ldbs, const char *ptn, size_t ptn_len, int
 
         /* save key */
         p_new->nodes[index - 1].klen = klen;
-        p_new->nodes[index - 1].key = (char *)malloc(GET_NEED_COUNT( klen, G_PAGE_SIZE ) * G_PAGE_SIZE);
+        p_new->nodes[index - 1].key = (char *) malloc(
+                GET_NEED_COUNT( klen, G_PAGE_SIZE ) * G_PAGE_SIZE);
         memcpy(p_new->nodes[index - 1].key, p_key, klen);
 
         /* find next */
@@ -391,22 +413,25 @@ char *ldb_keys(struct _leveldb_stuff *ldbs, const char *ptn, size_t ptn_len, int
     if (list.count > 0) {
         /* has members */
         /* *2\r\n$5\r\nmykey\r\n$5\r\nmyval\r\n */
-        *size = strlen("*\r\n") + get_number_len(list.count) + strlen("$\r\n\r\n") * (list.count)
-                + list.knubs + list.klens;
+        *size = strlen("*\r\n") + get_number_len(list.count)
+                + strlen("$\r\n\r\n") * (list.count) + list.knubs + list.klens;
         index = GET_NEED_COUNT( *size, G_PAGE_SIZE ) * G_PAGE_SIZE;
         result = (char *) malloc(index);
-        if (result == NULL ) goto FAIL_MEMORY;
+        if (result == NULL)
+            goto FAIL_MEMORY;
         memset(result, 0, index);
-        log_debug("----->>>ALL SIZE IS %d, BUFF %p : LEN IS %d\n", *size, result, index);
+        log_debug("----->>>ALL SIZE IS %d, BUFF %p : LEN IS %d\n",
+                *size, result, index);
 
         /* split piece */
         index = GET_NEED_COUNT( list.count, SOME_KV_NODES_COUNT );
         p_tmp = &list.head;
         sprintf(result, "*%d\r\n", list.count);
         p_dst = result + strlen(result);
-        for (i = 0, z = list.count; (i < index) && (p_tmp != NULL ); i++ ) {
+        for (i = 0, z = list.count; (i < index) && (p_tmp != NULL); i++) {
             for (j = 0; (j < SOME_KV_NODES_COUNT) && (z > 0); j++, z--) {
-                p_dst = set_bulk(p_dst, p_tmp->nodes[j].key, p_tmp->nodes[j].klen);
+                p_dst = set_bulk(p_dst, p_tmp->nodes[j].key,
+                        p_tmp->nodes[j].klen);
                 free(p_tmp->nodes[j].key);
             }
             p_old = p_tmp;
@@ -427,11 +452,12 @@ char *ldb_keys(struct _leveldb_stuff *ldbs, const char *ptn, size_t ptn_len, int
     err = NULL;
     leveldb_iter_destroy(iter);
     *size = -1;
-    return NULL ;
-    FAIL_MEMORY: fprintf(stderr, "%s:%d: FAILED MALLOC !\n", __FILE__, __LINE__);
+    return NULL;
+    FAIL_MEMORY: fprintf(stderr, "%s:%d: FAILED MALLOC !\n", __FILE__,
+            __LINE__);
     leveldb_iter_destroy(iter);
     *size = -1;
-    return NULL ;
+    return NULL;
 }
 
 char *ldb_info(struct _leveldb_stuff *ldbs, int *size)
@@ -491,7 +517,8 @@ char *ldb_info(struct _leveldb_stuff *ldbs, int *size)
 
     /* uptime_in_days */
     char uptid[64] = { 0 };
-    sprintf(uptid, "uptime_in_days: %ld", (curtime - LDB_START_TIME) / (24 * 3600));
+    sprintf(uptid, "uptime_in_days: %ld",
+            (curtime - LDB_START_TIME) / (24 * 3600));
     ++cnt;
     *size += strlen(uptid) + get_number_len(strlen(uptid));
 
@@ -541,7 +568,8 @@ char *ldb_info(struct _leveldb_stuff *ldbs, int *size)
     return result;
 }
 
-int ldb_put(struct _leveldb_stuff *ldbs, const char *key, size_t klen, const char *value, size_t vlen)
+int ldb_put(struct _leveldb_stuff *ldbs, const char *key, size_t klen,
+        const char *value, size_t vlen)
 {
     char *err = NULL;
     leveldb_put(ldbs->db, ldbs->woptions, key, klen, value, vlen, &err);
@@ -558,23 +586,23 @@ int ldb_put(struct _leveldb_stuff *ldbs, const char *key, size_t klen, const cha
 int ldb_delete(struct _leveldb_stuff *ldbs, const char *key, size_t klen)
 {
     char* err = NULL;
-	char *retval = NULL;
-	size_t retvlen = 0;
-	retval = leveldb_get(ldbs->db, ldbs->roptions, key, klen, &retvlen, &err);
-	if (err) {
-		fprintf(stderr, "\n%s\n", err);
-		leveldb_free(err);
-		err = NULL;
-		return -1;
-	}
-	leveldb_free(retval);
+    char *retval = NULL;
+    size_t retvlen = 0;
+    retval = leveldb_get(ldbs->db, ldbs->roptions, key, klen, &retvlen, &err);
+    if (err) {
+        fprintf(stderr, "\n%s\n", err);
+        leveldb_free(err);
+        err = NULL;
+        return -1;
+    }
+    leveldb_free(retval);
 
-	/* if not found, then return 0. */
-	if (retvlen == 0) {
-		return 0;
-	}
+    /* if not found, then return 0. */
+    if (retvlen == 0) {
+        return 0;
+    }
 
-	/* if found, delete it, then return 1. */
+    /* if found, delete it, then return 1. */
     leveldb_delete(ldbs->db, ldbs->woptions, key, klen, &err);
     if (err) {
         fprintf(stderr, "%s", err);
@@ -586,7 +614,8 @@ int ldb_delete(struct _leveldb_stuff *ldbs, const char *key, size_t klen)
     return 1;
 }
 
-int ldb_batch_put(struct _leveldb_stuff *ldbs, const char *key, size_t klen, const char *value, size_t vlen)
+int ldb_batch_put(struct _leveldb_stuff *ldbs, const char *key, size_t klen,
+        const char *value, size_t vlen)
 {
     leveldb_writebatch_put(ldbs->wbatch, key, klen, value, vlen);
     return 0;
@@ -609,15 +638,15 @@ int ldb_batch_commit(struct _leveldb_stuff *ldbs)
 
 int ldb_exists(struct _leveldb_stuff *ldbs, const char *key, size_t klen)
 {
-	char *err = NULL;
-	char *val = NULL;
-	size_t vlen = 0;
-	val = leveldb_get(ldbs->db, ldbs->roptions, key, klen, &vlen, &err);
-	if (err) {
-		fprintf(stderr, "\n%s\n", err);
-		leveldb_free(err);
-		return -1;
-	}
-	leveldb_free(val);
-	return vlen;
+    char *err = NULL;
+    char *val = NULL;
+    size_t vlen = 0;
+    val = leveldb_get(ldbs->db, ldbs->roptions, key, klen, &vlen, &err);
+    if (err) {
+        fprintf(stderr, "\n%s\n", err);
+        leveldb_free(err);
+        return -1;
+    }
+    leveldb_free(val);
+    return vlen;
 }

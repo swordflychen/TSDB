@@ -8,23 +8,24 @@
 #include "utils.h"
 #include "logger.h"
 
-
 #define MAX_DEF_LEN	1024*1024
 #define BACKLOG		1024
 #define FETCH_MAX_CNT_MSG	"-you have time travel!\r\n"
 
 /* An item in the connection queue. */
 typedef struct conn_queue_item CQ_ITEM;
-struct conn_queue_item {
+struct conn_queue_item
+{
     int sfd;
     int port;
     struct conn_queue_item *next;
-    char szAddr[ INET_ADDRSTRLEN ];/* 255.255.255.255 */
+    char szAddr[INET_ADDRSTRLEN];/* 255.255.255.255 */
 };
 
 /* A connection queue. */
 typedef struct conn_queue CQ_LIST;
-struct conn_queue {
+struct conn_queue
+{
     CQ_ITEM *head;
     CQ_ITEM *tail;
     pthread_mutex_t lock;
@@ -34,35 +35,38 @@ struct conn_queue {
  * libev default loop, with a accept_watcher to accept the new connect
  * and dispatch to WORK_THREAD.
  */
-typedef struct {
-    pthread_t thread_id;            /* unique ID of this thread */
-    struct ev_loop *loop;           /* libev loop this thread uses */
-    struct ev_io accept_watcher;    /* accept watcher for new connect */
+typedef struct
+{
+    pthread_t thread_id; /* unique ID of this thread */
+    struct ev_loop *loop; /* libev loop this thread uses */
+    struct ev_io accept_watcher; /* accept watcher for new connect */
 } DISPATCHER_THREAD;
 
 /*
  * Each libev instance has a async_watcher, which other threads
  * can use to signal that they've put a new connection on its queue.
  */
-typedef struct {
-    pthread_t thread_id;                /* unique ID of this thread */
-    struct ev_loop *loop;               /* libev loop this thread uses */
-    struct ev_async async_watcher;      /* async watcher for new connect */
+typedef struct
+{
+    pthread_t thread_id; /* unique ID of this thread */
+    struct ev_loop *loop; /* libev loop this thread uses */
+    struct ev_async async_watcher; /* async watcher for new connect */
     struct ev_prepare prepare_watcher;
     struct ev_check check_watcher;
-    struct conn_queue new_conn_queue;   /* queue of new connections to handle */
+    struct conn_queue new_conn_queue; /* queue of new connections to handle */
 } WORK_THREAD;
 
-enum {
-    NO_WORKING = 0,
-    IS_WORKING = 1,
+enum
+{
+    NO_WORKING = 0, IS_WORKING = 1,
 };
 
-struct data_node {
+struct data_node
+{
     /***cqi***/
     struct conn_queue_item item;
     /***ev***/
-    struct ev_loop *loop;     /* libev loop this thread uses */
+    struct ev_loop *loop; /* libev loop this thread uses */
 
     ev_io io_watcher;
     int io_work_status;

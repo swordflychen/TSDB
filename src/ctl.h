@@ -6,6 +6,7 @@
 
 #define OPT_OK              "+OK\r\n"
 #define OPT_PONG            "+PONG\r\n"
+#define OPT_NUMBER          ":%d\r\n"
 #define OPT_ONE             ":1\r\n"
 #define OPT_ZERO            ":0\r\n"
 #define OPT_LDB_ERROR       "-LDB ERROR\r\n"

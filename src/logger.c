@@ -23,7 +23,8 @@ typedef struct log_context
 
 static LogContext g_log_context;
 
-int32_t open_log(const char *filename, int32_t level, int8_t is_threadsafe, uint64_t rotate_size)
+int32_t open_log(const char *filename, int32_t level, int8_t is_threadsafe,
+        uint64_t rotate_size)
 {
     if (strlen(filename) > PATH_MAX - 20) {
         fprintf(stderr, "log filename too long!");
@@ -62,7 +63,8 @@ int32_t open_log(const char *filename, int32_t level, int8_t is_threadsafe, uint
             free(g_log_context.mutex);
             g_log_context.mutex = NULL;
         }
-        g_log_context.mutex = (pthread_mutex_t *) malloc(sizeof(pthread_mutex_t));
+        g_log_context.mutex = (pthread_mutex_t *) malloc(
+                sizeof(pthread_mutex_t));
         pthread_mutex_init(g_log_context.mutex, NULL);
     }
 
@@ -113,18 +115,18 @@ static void rotate()
 inline static const char* level_name(int level)
 {
     switch (level) {
-        case LEVEL_FATAL:
-            return "[FATAL] ";
-        case LEVEL_ERROR:
-            return "[ERROR] ";
-        case LEVEL_WARN:
-            return "[WARN ] ";
-        case LEVEL_INFO:
-            return "[INFO ] ";
-        case LEVEL_DEBUG:
-            return "[DEBUG] ";
-        case LEVEL_TRACE:
-            return "[TRACE] ";
+    case LEVEL_FATAL:
+        return "[FATAL] ";
+    case LEVEL_ERROR:
+        return "[ERROR] ";
+    case LEVEL_WARN:
+        return "[WARN ] ";
+    case LEVEL_INFO:
+        return "[INFO ] ";
+    case LEVEL_DEBUG:
+        return "[DEBUG] ";
+    case LEVEL_TRACE:
+        return "[TRACE] ";
     }
     return "";
 }
@@ -149,9 +151,9 @@ static int logv(int level, const char *fmt, va_list ap)
     time = tv.tv_sec;
     tm = localtime(&time);
     /* %3ld 在数值位数超过3位的时候不起作用, 所以这里转成int */
-    len = sprintf(ptr, "%04d-%02d-%02d %02d:%02d:%02d.%03d ", tm->tm_year + 1900,
-            tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec,
-            (int) (tv.tv_usec / 1000));
+    len = sprintf(ptr, "%04d-%02d-%02d %02d:%02d:%02d.%03d ",
+            tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour,
+            tm->tm_min, tm->tm_sec, (int) (tv.tv_usec / 1000));
     if (len < 0) {
         return -1;
     }
@@ -179,7 +181,8 @@ static int logv(int level, const char *fmt, va_list ap)
 
     g_log_context.stats.w_curr += len;
     g_log_context.stats.w_total += len;
-    if (g_log_context.rotate_size > 0 && g_log_context.stats.w_curr > g_log_context.rotate_size) {
+    if (g_log_context.rotate_size > 0
+            && g_log_context.stats.w_curr > g_log_context.rotate_size) {
         rotate();
     }
     if (g_log_context.mutex) {

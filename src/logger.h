@@ -19,7 +19,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-
 #define NONE            "\x1B[m"
 #define GRAY            "\x1B[0;30m"
 #define LIGHT_GRAY      "\x1B[1;30m"
@@ -38,7 +37,6 @@
 #define WHITE           "\x1B[0;37m"
 #define LIGHT_WHITE     "\x1B[1;37m"
 
-
 enum
 {
     LEVEL_NONE = (-1),
@@ -55,7 +53,8 @@ enum
 /*
  * open logger.
  */
-int32_t open_log(const char *filename, int32_t level, int8_t is_threadsafe, uint64_t rotate_size);
+int32_t open_log(const char *filename, int32_t level, int8_t is_threadsafe,
+        uint64_t rotate_size);
 
 /*
  * close logger.
@@ -102,5 +101,4 @@ void set_log_level(int level);
     log_write(LEVEL_FATAL, "%s(%d): " fmt, __FILE__, __LINE__, ##args)
 
 #endif
-
 
