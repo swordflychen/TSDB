@@ -85,6 +85,7 @@ TSDB: Time Series Database.
     |-- deps                    --> dependented libraries
     |-- obj                     --> object binary files
     |-- src                     --> source code
+    |-- test                    --> test code
     `-- var                     --> default workspace
 
 ```

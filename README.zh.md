@@ -84,6 +84,7 @@ tsdb: time series database.
     |-- deps                    --> tsdb依赖的library
     |-- obj                     --> tsdb代码生成的二进制文件保存目录
     |-- src                     --> tsdb代码所在的目录
+    |-- test                    --> tsdb测试代码所在的目录
     `-- var                     --> tsdb 默认的工作目录
 
 ```
