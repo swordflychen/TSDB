@@ -144,10 +144,10 @@ int ctl_cmd_parse(struct data_node *p_node)
             PARSE_MEMBER(p_node->key, p_node->klen);
             PARSE_LEN(p_node->vlen);
             PARSE_MEMBER(p_node->val, p_node->vlen);
-            x_out_time(&g_dbg_time);
+            // x_out_time(&g_dbg_time);
             ok = ldb_put(g_ldb, &data[p_node->key], p_node->klen,
                     &data[p_node->val], p_node->vlen);
-            x_out_time(&g_dbg_time);
+            // x_out_time(&g_dbg_time);
             goto W_OUT_PUT;
 
         case LDB_DEL:

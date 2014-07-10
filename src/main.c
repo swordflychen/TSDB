@@ -366,7 +366,8 @@ static void accept_callback(struct ev_loop *loop, ev_io *w, int revents)
         send(newfd, FETCH_MAX_CNT_MSG, strlen(FETCH_MAX_CNT_MSG), 0);
         close(newfd);
         return;
-    }x_out_time(&g_dbg_time);
+    }
+    // x_out_time(&g_dbg_time);
     fcntl(newfd, F_SETFL, fcntl(newfd, F_GETFL) | O_NONBLOCK);
 
     if (!pthread_equal(g_master_thread.thread_id, pthread_self())) {
@@ -390,7 +391,7 @@ static void accept_callback(struct ev_loop *loop, ev_io *w, int revents)
             cq_push( &(g_work_threads[robin].new_conn_queue) , p_item);
             ev_async_send(g_work_threads[robin].loop, &(g_work_threads[robin].async_watcher));
         } else {
-            printf("IN ACCEPT_LOOP!\n");
+            // printf("IN ACCEPT_LOOP!\n");
             goto ACCEPT_LOOP;
         }
         g_round_robin++;
@@ -424,7 +425,7 @@ static void recv_callback(struct ev_loop *loop, ev_io *w, int revents)
     int ret = 0;
     char temp[MAX_DEF_LEN] = { 0 };
 
-    x_out_time(&g_dbg_time);
+    // x_out_time(&g_dbg_time);
     struct data_node *p_node = &g_cache_pool[w->fd];
     ret = recv(w->fd, temp, MAX_DEF_LEN, 0);/* to use recv (MAX_DEF_LEN - 1) can't make it safe */
     log_debug("   recv size : %d\n", ret);
@@ -497,7 +498,7 @@ static void recv_callback(struct ev_loop *loop, ev_io *w, int revents)
 
 static void send_callback(struct ev_loop *loop, ev_io *w, int revents)
 {
-    x_out_time(&g_dbg_time);
+    // x_out_time(&g_dbg_time);
     struct data_node *p_node = &g_cache_pool[w->fd];
     if (p_node->mxlen != p_node->ptlen) {
         int ret = send(w->fd, p_node->sdbf + p_node->ptlen,
