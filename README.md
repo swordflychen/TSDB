@@ -119,5 +119,8 @@ TSDB: Time Series Database.
 ### 9. License
 * See the LICENSE file. 
 
-### 10. TODO 
-* TODO
+### 10. Author 
+* swordflychen@gmail.com
+
+### 11 TODO
+* todo
