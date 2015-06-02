@@ -10,6 +10,8 @@ TSDB: Time Series Database.
 * Storage engine uses levelDB.
 * Supports snappy compression.
 * Redis clients are supported, some commands just are supported, see details below.
+* Support multi mode: master-slave or master-master.
+* Evently consistency.
 
 ### 1. Commands support
 * `get key`: Get the value of a key.
