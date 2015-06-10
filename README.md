@@ -49,7 +49,7 @@ TSDB: Time Series Database.
 ```
 * Start OK.
 
-### 4. Config file -- config.json
+### 4. Config file: config.json
 * The file is json format. Below is a description of each item.
 ```
     w_port: integer, write port.
@@ -123,6 +123,4 @@ TSDB: Time Series Database.
 
 ### 10. Author 
 * swordflychen@gmail.com
-
-### 11 TODO
-* todo
+* cjfeii@126.com
